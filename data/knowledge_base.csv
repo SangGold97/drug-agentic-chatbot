@@ -1,0 +1,6 @@
+drug_name,indication,mechanism,side_effects,interactions,contraindications
+Paracetamol,Giảm đau và hạ sốt,Ức chế COX-3 trong não,Buồn nôn hiếm khi,Không tương tác đáng kể,Suy gan nặng
+Ibuprofen,Giảm đau chống viêm,Ức chế COX-1 và COX-2,Đau dạ dày tăng nguy cơ loét,Tăng tác dụng warfarin,Loét dạ dày tá tràng
+Aspirin,Ngăn ngừa đột quỵ tim,Ức chế COX-1 không hồi phục,Chảy máu dạ dày,Tăng nguy cơ chảy máu với warfarin,Hen suyễn aspirin
+Amoxicillin,Nhiễm khuẩn do vi khuẩn,Ức chế tổng hợp thành tế bào,Phát ban dị ứng,Giảm hiệu quả thuốc tránh thai,Dị ứng penicillin
+Metformin,Đái tháo đường type 2,Giảm sản xuất glucose gan,Rối loạn tiêu hóa nhẹ,Tăng nguy cơ toan lactic với cồn,Suy thận nặng
