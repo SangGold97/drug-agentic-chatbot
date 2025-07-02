@@ -3,12 +3,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
 import os
 from typing import Dict, Optional
-import logging
+from loguru import logger
 
 class ModelLoader:
-    def __init__(self, models_dir: str):
-        self.models_dir = models_dir
-        self.logger = logging.getLogger(__name__)
+    def __init__(self):
+        self.models_dir = os.path.join(os.path.dirname(__file__), 'models')
+        os.makedirs(self.models_dir, exist_ok=True)
         
         # 4-bit quantization config
         self.quantization_config = BitsAndBytesConfig(
@@ -26,20 +26,20 @@ class ModelLoader:
         local_dir = os.path.join(self.models_dir, model_name.replace('/', '_'))
         
         if os.path.exists(local_dir):
-            self.logger.info(f"Model {model_name} already exists locally")
+            logger.info(f"Model {model_name} already exists locally")
             return local_dir
         
         try:
-            self.logger.info(f"Downloading model {model_name}")
+            logger.info(f"Downloading model {model_name}")
             snapshot_download(
                 repo_id=model_name,
                 local_dir=local_dir,
                 local_dir_use_symlinks=False
             )
-            self.logger.info(f"Model {model_name} downloaded successfully")
+            logger.info(f"Model {model_name} downloaded successfully")
             return local_dir
         except Exception as e:
-            self.logger.error(f"Failed to download model {model_name}: {e}")
+            logger.error(f"Failed to download model {model_name}: {e}")
             raise
     
     def load_model(self, model_name: str, use_quantization: bool = True) -> Dict:
@@ -78,11 +78,11 @@ class ModelLoader:
             }
             self._loaded_models[model_name] = model_dict
             
-            self.logger.info(f"Model {model_name} loaded successfully")
+            logger.info(f"Model {model_name} loaded successfully")
             return model_dict
         
         except Exception as e:
-            self.logger.error(f"Failed to load model {model_name}: {e}")
+            logger.error(f"Failed to load model {model_name}: {e}")
             raise
     
     def unload_model(self, model_name: str):
@@ -90,8 +90,16 @@ class ModelLoader:
         if model_name in self._loaded_models:
             del self._loaded_models[model_name]
             torch.cuda.empty_cache()
-            self.logger.info(f"Model {model_name} unloaded")
-    
+            logger.info(f"Model {model_name} unloaded")
+
     def get_loaded_models(self) -> list:
         """Get list of currently loaded models"""
         return list(self._loaded_models.keys())
+    
+if __name__ == "__main__":
+    # Example usage
+    loader = ModelLoader()
+    model_info = loader.load_model("google/flan-t5-base")
+    print(f"Loaded model: {model_info['model_name']}")
+
+

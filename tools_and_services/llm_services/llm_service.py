@@ -5,19 +5,18 @@ import json
 import os
 from typing import Dict, List, Optional, Union
 from dotenv import load_dotenv
-import logging
+from loguru import logger
 import asyncio
 
 load_dotenv()
 
 class LLMService:
     def __init__(self):
-        self.models_dir = os.getenv('MODELS_DIR', './tools_services/llm_services/models')
+        self.models_dir = os.path.join(os.path.dirname(__file__), 'models')
         os.makedirs(self.models_dir, exist_ok=True)
         
         self.model_loader = ModelLoader(self.models_dir)
         self.prompts = LLMPrompts()
-        self.logger = logging.getLogger(__name__)
         
         # Model configurations from env
         self.model_configs = {
@@ -65,7 +64,7 @@ class LLMService:
             
             return generated_text
         except Exception as e:
-            self.logger.error(f"Text generation failed: {e}")
+            logger.error(f"Text generation failed: {e}")
             return ""
     
     async def query_augmentation(self, original_query: str) -> Dict[str, Union[str, List[str]]]:
@@ -87,7 +86,7 @@ class LLMService:
             }
         except json.JSONDecodeError:
             # Fallback if JSON parsing fails
-            self.logger.warning("Failed to parse JSON from query augmentation, using fallback")
+            logger.warning("Failed to parse JSON from query augmentation, using fallback")
             return {
                 'structured_query': original_query,
                 'augmented_queries': [original_query]
@@ -123,7 +122,7 @@ class LLMService:
                 'follow_up_queries': result.get('follow_up_queries', [])[:2]  # Max 2 follow-up
             }
         except json.JSONDecodeError:
-            self.logger.warning("Failed to parse JSON from reflection, assuming insufficient")
+            logger.warning("Failed to parse JSON from reflection, assuming insufficient")
             return {
                 'sufficient': False,
                 'reasoning': 'Không thể đánh giá đầy đủ thông tin',
@@ -156,7 +155,7 @@ class LLMService:
         for model_type in model_types:
             if model_type in self.model_configs:
                 model_name = self.model_configs[model_type]
-                self.logger.info(f"Preloading {model_type} model: {model_name}")
+                logger.info(f"Preloading {model_type} model: {model_name}")
                 task = asyncio.get_event_loop().run_in_executor(
                     None, self.model_loader.load_model, model_name, True
                 )

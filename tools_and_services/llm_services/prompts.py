@@ -1,20 +1,56 @@
 class LLMPrompts:
-    """Class chứa các prompt templates cho các tác vụ khác nhau"""
+    """Class containing various prompts for LLM tasks in medical domain"""
     
     @staticmethod
     def query_augmentation_prompt(original_query: str) -> str:
-        """Prompt cho tác vụ query augmentation"""
-        return f"""Bạn là một chuyên gia y học. Từ câu hỏi gốc của người dùng, hãy tạo ra:
-1. Một Structured Query: Mô tả lại câu hỏi theo cấu trúc rõ ràng (thuốc gì, bệnh gì, gene gì)
-2. Tối đa 3 Augmented Queries: Các câu hỏi suy luận cần thiết để trả lời câu hỏi gốc
+        """Prompt for query augmentation task"""
 
-Câu hỏi gốc: {original_query}
+        return """Bạn là một chuyên gia y học, dược học và di truyền học. Bạn có kiến thức chuyên sâu như một bác sĩ, dược sĩ và nhà khoa học di truyền.
+
+Nhiệm vụ của bạn: Từ **câu hỏi gốc**, hãy tạo ra:
+1. Một Structured Query: Mô tả lại câu hỏi theo cấu trúc rõ ràng (câu hỏi liên quan đến thuốc gì, bệnh gì, gene gì)
+2. Tối đa 3 Augmented Queries: Các câu hỏi suy luận cần thiết ở các khía cạnh khác nhau để trả lời câu hỏi gốc
+
+Hướng dẫn chi tiết:
+- **Structured Query**: Phải rõ ràng, ngắn gọn, bao gồm các thông tin chính như tên thuốc, tên bệnh, gene
+- **Augmented Queries**: Các câu hỏi mở rộng để làm rõ thông tin cần thiết
+- Tránh lặp lại câu hỏi gốc, ngắn gọn, mỗi câu hỏi làm rõ một khía cạnh khác nhau của câu hỏi: tương tác của thuốc với bệnh, tương tác của thuốc với gene, chỉ định điều trị của thuốc, v.v
+- Trả lời bằng tiếng Việt, sử dụng ngôn ngữ tự nhiên, dễ hiểu, theo định dạng JSON
 
 Trả lời theo định dạng JSON:
+```json
 {{
     "structured_query": "Structured query ở đây",
     "augmented_queries": ["Aug query 1", "Aug query 2", "Aug query 3"]
-}}"""
+}}
+```
+
+Ví dụ với câu hỏi gốc "Thuốc meloxicam có tác dụng gì trong điều trị viêm khớp?". Câu trả lời có thể là:
+```json
+{{
+    "structured_query": "Thuốc meloxicam trong điều trị viêm khớp",
+    "augmented_queries": [
+        "Tác dụng chính của thuốc meloxicam là gì?",
+        "Trong điều trị viêm khớp, meloxicam có tác dụng như nào?"
+    ]
+}}
+```
+
+Ví dụ với câu hỏi gốc "Tôi bị ho, cảm cúm, với kiểu gen CYP2D6 của tôi có nên dùng thuốc hydrocodone không?". Câu trả lời có thể là:
+```json
+{{
+    "structured_query": "Bị ho, cảm cúm, kiểu gen CYP2D6, thuốc hydrocodone",
+    "augmented_queries": [
+        "Thuốc hydrocodone có tác dụng gì trong điều trị ho và cảm cúm?",
+        "Thuốc hydrocodone tương tác với gene CYP2D6 như thế nào?",
+        "Liều dùng an toàn của hydrocodone đối với các kiểu gen CYP2D6 là gì?"
+    ]
+}}
+
+**Câu hỏi gốc**: {original_query}
+
+Hãy tuân thủ các hướng dẫn chi tiết và trả lời theo định dạng JSON với câu hỏi gốc trên.
+```""".format(original_query=original_query)
     
     @staticmethod
     def summary_web_results_prompt(aug_query: str, web_content: str) -> str:

@@ -1,4 +1,4 @@
-from tools_services import EmbeddingTool, VectorSearchTool
+from tools_and_services import EmbeddingTool, VectorSearchTool
 from typing import Optional
 import logging
 

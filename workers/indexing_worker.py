@@ -1,4 +1,4 @@
-from tools_services import EmbeddingTool
+from tools_and_services import EmbeddingTool
 from database import MilvusManager
 import pandas as pd
 from typing import List, Dict, Any
@@ -75,7 +75,7 @@ class IndexingWorker:
             contents = [chunk['content'] for chunk in chunks]
             
             # Generate embeddings
-            embeddings = await self.embedding_tool.embed_chunks(contents)
+            embeddings = await self.embedding_tool.generate_embedding(contents)
             
             # Add embeddings to chunks
             documents = []

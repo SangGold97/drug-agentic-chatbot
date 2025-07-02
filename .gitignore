@@ -1,0 +1,7 @@
+tools_and_services/llm_services/models
+
+tools_and_services/rerank/cache
+
+tools_and_services/embedding/cache
+
+database/volumes

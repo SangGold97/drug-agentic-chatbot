@@ -1,5 +1,5 @@
-from tools_services.llm_services import LLMService
-from tools_services import WebSearchTool
+from tools_and_services.llm_services import LLMService
+from tools_and_services import WebSearchTool
 from typing import List, Dict
 import os
 from dotenv import load_dotenv

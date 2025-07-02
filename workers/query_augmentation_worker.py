@@ -1,4 +1,4 @@
-from tools_services.llm_services import LLMService
+from tools_and_services.llm_services import LLMService
 from typing import Dict, List
 import logging
 

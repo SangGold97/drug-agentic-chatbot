@@ -35,12 +35,13 @@ class PostgresManager:
         """Create necessary tables if they don't exist"""
         create_conversations_table = """
         CREATE TABLE IF NOT EXISTS conversations (
-            id SERIAL PRIMARY KEY,
             user_id VARCHAR(255) NOT NULL,
             conversation_id VARCHAR(255) NOT NULL,
+            turn INT NOT NULL,
             query TEXT NOT NULL,
             answer TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, conversation_id, turn)
         );
         
         CREATE INDEX IF NOT EXISTS idx_user_conversation 
@@ -54,28 +55,46 @@ class PostgresManager:
             self.logger.error(f"Failed to create tables: {e}")
             raise
     
-    async def save_conversation(self, user_id: str, conversation_id: str, query: str, answer: str):
+    async def save_conversation(self, user_id: str, conversation_id: str, query: str, answer: str, turn: int):
         """Save conversation to database"""
         insert_query = """
-        INSERT INTO conversations (user_id, conversation_id, query, answer)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO conversations (user_id, conversation_id, turn, query, answer)
+        VALUES ($1, $2, $3, $4, $5)
         """
         
         try:
-            await self.connection.execute(insert_query, user_id, conversation_id, query, answer)
-            self.logger.info(f"Conversation saved for user {user_id}")
+            await self.connection.execute(insert_query, user_id, conversation_id, turn, query, answer)
+            self.logger.info(f"Conversation saved for user {user_id}, conversation {conversation_id}, turn {turn}")
         except Exception as e:
             self.logger.error(f"Failed to save conversation: {e}")
             raise
     
-    async def get_conversation_history(self, user_id: str, conversation_id: str, limit: int = 10) -> List[Dict]:
-        """Get conversation history for a user"""
+    async def get_next_turn(self, user_id: str, conversation_id: str) -> int:
+        """Get the next turn number for a conversation"""
         select_query = """
-        SELECT query, answer, created_at
+        SELECT COALESCE(MAX(turn), 0) + 1 as next_turn
         FROM conversations
         WHERE user_id = $1 AND conversation_id = $2
-        ORDER BY created_at DESC
-        LIMIT $3
+        """
+        
+        try:
+            row = await self.connection.fetchrow(select_query, user_id, conversation_id)
+            return row['next_turn']
+        except Exception as e:
+            self.logger.error(f"Failed to get next turn: {e}")
+            return 1
+    
+    async def get_conversation_history(self, user_id: str, conversation_id: str, limit: int = 5) -> List[Dict]:
+        """Get conversation history for a user"""
+        select_query = """
+        SELECT * FROM (
+            SELECT turn, query, answer
+            FROM conversations
+            WHERE user_id = $1 AND conversation_id = $2
+            ORDER BY turn DESC
+            LIMIT $3
+        ) sub
+        ORDER BY turn ASC;
         """
         
         try:
@@ -91,10 +110,3 @@ class PostgresManager:
             await self.connection.close()
             self.logger.info("PostgreSQL connection closed")
     
-    async def __aenter__(self):
-        await self.connect()
-        await self.create_tables()
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
