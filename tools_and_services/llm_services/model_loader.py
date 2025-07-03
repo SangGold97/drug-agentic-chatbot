@@ -1,5 +1,5 @@
 from huggingface_hub import snapshot_download
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, T5Tokenizer, T5ForConditionalGeneration
 import torch
 import os
 from typing import Dict, Optional
@@ -34,7 +34,7 @@ class ModelLoader:
             snapshot_download(
                 repo_id=model_name,
                 local_dir=local_dir,
-                local_dir_use_symlinks=False
+                # local_dir_use_symlinks=False
             )
             logger.info(f"Model {model_name} downloaded successfully")
             return local_dir
@@ -82,8 +82,28 @@ class ModelLoader:
             return model_dict
         
         except Exception as e:
-            logger.error(f"Failed to load model {model_name}: {e}")
-            raise
+            try:
+                # Attempt to load T5 model if the main model fails
+                logger.info(f"Trying to load T5 model for {model_name}")
+                # Use legacy=False for correct tokenization behavior
+                tokenizer = T5Tokenizer.from_pretrained(local_dir, legacy=False)
+                model = T5ForConditionalGeneration.from_pretrained(
+                    local_dir,
+                    device_map="auto",
+                    torch_dtype=torch.float16
+                )
+                model_dict = {
+                    'model': model,
+                    'tokenizer': tokenizer,
+                    'model_name': model_name
+                }
+                self._loaded_models[model_name] = model_dict
+                logger.info(f"T5 model {model_name} loaded successfully")
+                return model_dict
+            
+            except Exception as e:
+                logger.error(f"Failed to load model {model_name}: {e}")
+                raise
     
     def unload_model(self, model_name: str):
         """Unload model from memory"""

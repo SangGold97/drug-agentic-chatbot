@@ -15,7 +15,7 @@ class EmbeddingTool:
         self.model = None
         self.cache_dir = os.path.join(os.path.dirname(__file__), 'cache')
     
-    async def load_model(self):
+    def load_model(self):
         """Load embedding model"""
         if self.model is None:
             try:
@@ -23,15 +23,11 @@ class EmbeddingTool:
 
                 # Create cache directory if it doesn't exist
                 os.makedirs(self.cache_dir, exist_ok=True)
-
-                # Run in thread pool to avoid blocking
-                loop = asyncio.get_event_loop()
-                self.model = await loop.run_in_executor(
-                    None, 
-                    lambda: SentenceTransformer(
-                        self.model_name, 
-                        cache_folder=self.cache_dir
-                    )
+                
+                # Load model synchronously for startup
+                self.model = SentenceTransformer(
+                    self.model_name, 
+                    cache_folder=self.cache_dir
                 )
                 logger.info("Embedding model loaded successfully")
 
@@ -42,7 +38,7 @@ class EmbeddingTool:
     async def generate_embedding(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for text(s)"""
         if self.model is None:
-            await self.load_model()
+            self.load_model()
         
         try:
             # Run embedding generation in thread pool
@@ -61,10 +57,10 @@ class EmbeddingTool:
             logger.error(f"Failed to generate embeddings: {e}")
             return [[] for _ in texts]
 
-    async def get_embedding_dimension(self) -> int:
+    def get_embedding_dimension(self) -> int:
         """Get embedding dimension"""
         if self.model is None:
-            await self.load_model()
+            self.load_model()
         return self.model.get_sentence_embedding_dimension()
 
     def vector_norm(self, embeddings: List[List[float]]) -> List[List[float]]:
@@ -94,11 +90,11 @@ if __name__ == "__main__":
     async def test_embedding_tool():
         start = time()
         embedding_tool = EmbeddingTool()
-        await embedding_tool.load_model()
+        embedding_tool.load_model()
         print(f"Embedding model loaded successfully in {(time() - start):.2f}s")
         
         # Get embedding dimension
-        dimension = await embedding_tool.get_embedding_dimension()
+        dimension = embedding_tool.get_embedding_dimension()
         print(f"Embedding dimension: {dimension}")
         
         start = time()

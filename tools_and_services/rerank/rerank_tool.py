@@ -24,7 +24,7 @@ class RerankTool:
         self.prefix = "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
         self.suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
     
-    async def load_model(self):
+    def load_model(self):
         """Load Qwen3-Reranker model"""
         if self.model is None:
             try:
@@ -33,30 +33,21 @@ class RerankTool:
 
                 # Create cache directory if it doesn't exist
                 os.makedirs(self.cache_dir, exist_ok=True)
-
-                # Run in thread pool to avoid blocking
-                loop = asyncio.get_event_loop()
                 
                 # Load tokenizer
-                self.tokenizer = await loop.run_in_executor(
-                    None,
-                    lambda: AutoTokenizer.from_pretrained(
-                        self.model_name, 
-                        padding_side='left',
-                        cache_dir=self.cache_dir
-                    )
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_name, 
+                    padding_side='left',
+                    cache_dir=self.cache_dir
                 )
                 
                 # Load model
-                self.model = await loop.run_in_executor(
-                    None,
-                    lambda: AutoModelForCausalLM.from_pretrained(
-                        self.model_name,
-                        torch_dtype=torch.float16,
-                        device_map="auto",
-                        cache_dir=self.cache_dir
-                    ).eval()
-                )
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_name,
+                    torch_dtype=torch.float16,
+                    device_map="auto",
+                    cache_dir=self.cache_dir
+                ).eval()
                 
                 # Get token IDs for yes/no
                 self.token_false_id = self.tokenizer.convert_tokens_to_ids("no")
@@ -77,20 +68,16 @@ class RerankTool:
         """Format instruction for Qwen3-Reranker with medical context"""
         return f"<Instruct>: {self.task_instruction}\n<Query>: {query}\n<Document>: {document}"
     
-    async def process_inputs(self, pairs: List[str]) -> Dict:
-        """Process input pairs for Qwen3-Reranker (async for large batches)"""
-        loop = asyncio.get_event_loop()
+    def process_inputs(self, pairs: List[str]) -> Dict:
+        """Process input pairs for Qwen3-Reranker"""
         
-        # Run tokenization in thread pool for large batches
-        inputs = await loop.run_in_executor(
-            None,
-            lambda: self.tokenizer(
-                pairs, 
-                padding=False, 
-                truncation='longest_first',
-                max_length=self.max_length - len(self.prefix_tokens) - len(self.suffix_tokens),
-                return_attention_mask=False
-            )
+        # Run tokenization
+        inputs = self.tokenizer(
+            pairs, 
+            padding=False, 
+            truncation='longest_first',
+            max_length=self.max_length - len(self.prefix_tokens) - len(self.suffix_tokens),
+            return_attention_mask=False
         )
         
         # Add prefix and suffix tokens
@@ -127,7 +114,7 @@ class RerankTool:
         scores = await loop.run_in_executor(None, _inference)
         return scores
 
-    async def elbow_pruning(self, chunks: List[Dict]) -> List[Dict]:
+    def elbow_pruning(self, chunks: List[Dict]) -> List[Dict]:
         """
         Prune chunks using elbow method based on score intervals.
         Returns chunks from start to the position with the largest interval.
@@ -169,7 +156,7 @@ class RerankTool:
             return chunks
         
         if self.model is None:
-            await self.load_model()
+            self.load_model()
         
         try:
             # Prepare query-chunk pairs for reranking
@@ -180,7 +167,7 @@ class RerankTool:
                 pairs.append(formatted_pair)
             
             # Get relevance scores using async pipeline
-            inputs = await self.process_inputs(pairs)
+            inputs = self.process_inputs(pairs)
             scores = await self.compute_logits(inputs)
             
             # Combine chunks with scores and sort
@@ -203,7 +190,7 @@ class RerankTool:
 
             # Elbow pruning if enabled
             if elbow:
-                reranked_chunks = await self.elbow_pruning(reranked_chunks)
+                reranked_chunks = self.elbow_pruning(reranked_chunks)
             
             logger.info(f"Reranked completed with {len(reranked_chunks)} chunks from {len(chunks)} total")
             return reranked_chunks
@@ -218,7 +205,7 @@ if __name__ == "__main__":
     async def test_rerank_tool():
         start = time()
         rerank_tool = RerankTool()
-        await rerank_tool.load_model()
+        rerank_tool.load_model()
         print(f"Rerank model loaded successfully in {(time() - start):.2f}s")
         start = time()
 

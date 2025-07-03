@@ -72,7 +72,7 @@ class WebSearchTool:
                 return ""
     
     async def _fetch_url_content(self, session: aiohttp.ClientSession, url: str) -> Dict:
-        """Fetch content from URL asynchronously"""
+        """Fetch content from URL asynchronously """
         try:
             async with session.get(url, timeout=5) as response:
                 if response.status == 200:
