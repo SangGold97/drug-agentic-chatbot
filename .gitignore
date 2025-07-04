@@ -5,3 +5,5 @@ tools_and_services/rerank/cache
 tools_and_services/embedding/cache
 
 database/volumes
+
+database/__pycache__

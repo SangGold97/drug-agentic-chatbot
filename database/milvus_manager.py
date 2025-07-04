@@ -12,7 +12,7 @@ class MilvusManager:
         self.host = os.getenv('MILVUS_HOST', 'localhost')
         self.port = int(os.getenv('MILVUS_PORT', 19530))
         self.db_name = os.getenv('MILVUS_DB', 'drug_chatbot')
-        self.vector_dim = int(os.getenv('VECTOR_DIMENSION', 768))
+        self.vector_dim = int(os.getenv('VECTOR_DIMENSION', 1024))
         self.connection_alias = "default"
         self.logger = logging.getLogger(__name__)
     

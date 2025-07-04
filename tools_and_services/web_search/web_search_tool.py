@@ -49,7 +49,7 @@ class WebSearchTool:
             return text.strip()
             
         except Exception as e:
-            logger.error(f"Failed to extract text with readability: {e}")
+            logger.info(f"Cannot extract text with readability: {e}")
             # Fallback to basic extraction
             try:
                 soup = BeautifulSoup(html_content, 'html.parser')
@@ -90,15 +90,20 @@ class WebSearchTool:
             logger.error(f"Failed to fetch {url}: {e}")
             return {'url': url, 'content': '', 'success': False}
     
-    async def search_urls(self, query: str) -> List[str]:
+    async def search_urls(self, query: str, 
+                          suffix_domain: str = " vinmec nhathuoclongchau pharmacity"
+                          ) -> List[str]:
         """Search for URLs using DuckDuckGo"""
         try:
+            # Add delay to avoid rate limiting
+            await asyncio.sleep(1)
+
             # Run DuckDuckGo search in executor to avoid blocking
             loop = asyncio.get_event_loop()
             def _search():
                 with DDGS(timeout=5) as ddgs:
                     return list(ddgs.text(
-                        query,
+                        query + suffix_domain,
                         max_results=5,
                         region='wt-wt',
                         safesearch='moderate'
@@ -152,26 +157,26 @@ class WebSearchTool:
             logger.error(f"Failed to fetch web content: {e}")
             return []
     
-    async def search_and_fetch(self, aug_queries: List[str]) -> Dict[str, List[Dict]]:
-        """Search and fetch content for multiple augmented queries"""
-        if not aug_queries:
+    async def search_and_fetch(self, structured_queries: List[str]) -> Dict[str, List[Dict]]:
+        """Search and fetch content for multiple structured queries"""
+        if not structured_queries:
             return {}
         
         all_results = {}
         all_urls = set()
         
         # Search URLs for each query asynchronously
-        search_tasks = [self.search_urls(aug_query) for aug_query in aug_queries]
+        search_tasks = [self.search_urls(aug_query) for aug_query in structured_queries]
         search_results = await asyncio.gather(*search_tasks, return_exceptions=True)
         
         # Process search results
-        for aug_query, urls in zip(aug_queries, search_results):
+        for query, urls in zip(structured_queries, search_results):
             if urls:
-                all_results[aug_query] = urls
+                all_results[query] = urls
                 all_urls.update(urls)
             else:
-                logger.warning(f"No URLs found for query: {aug_query}")
-                all_results[aug_query] = []
+                logger.warning(f"No URLs found for query: {query}")
+                all_results[query] = []
         
         # Fetch content for all unique URLs
         if all_urls:
@@ -182,7 +187,7 @@ class WebSearchTool:
             
             # Map content back to queries
             query_contents = {}
-            for aug_query, urls in all_results.items():
+            for query, urls in all_results.items():
                 contents = []
                 for url in urls:
                     if url in url_content_map:
@@ -190,11 +195,11 @@ class WebSearchTool:
                             'url': url,
                             'content': url_content_map[url]
                         })
-                query_contents[aug_query] = contents
-            
+                query_contents[query] = contents
+
             return query_contents
-        
-        return {query: [] for query in aug_queries}
+
+        return {query: [] for query in structured_queries}
 
 
 # Test the WebSearchTool
@@ -209,9 +214,9 @@ if __name__ == "__main__":
         logger.info("Testing search_and_fetch function...")
         
         test_queries = [
-            "thuốc paracetalmol có tác dụng gì? vinmec nhathuoclongchau pharmacity",
-            "tác dụng của paracetamol trong giảm đau? vinmec nhathuoclongchau pharmacity",
-            "có những loại thuốc giảm đau phổ biến nào? vinmec nhathuoclongchau pharmacity"
+            "chỉ định và tác dụng phụ của paracetamol, bệnh đau đầu",
+            # "tác dụng của paracetamol trong giảm đau?",
+            # "có những loại thuốc giảm đau phổ biến nào?"
         ]
         
         logger.info(f"Searching and fetching content for {len(test_queries)} queries:")
@@ -233,7 +238,7 @@ if __name__ == "__main__":
             for i, content in enumerate(contents, 1):
                 url = content['url']
                 text_length = len(content['content'])
-                snippet = content['content'][:10000].replace('\n', ' ').strip() + '...'
+                snippet = content['content'][:1000] + '...'
                 logger.info(f"  {i}. {url}")
                 logger.info(f"     Length: {text_length} chars")
                 logger.info(f"     Preview: {snippet}")

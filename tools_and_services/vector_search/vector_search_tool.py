@@ -10,7 +10,7 @@ class VectorSearchTool:
     def __init__(self):
         self.milvus_manager = MilvusManager()
         self.top_k_vector = int(os.getenv('TOP_K_VECTOR', 10))
-        self.top_k_intent = int(os.getenv('TOP_K_INTENT', 5))
+        self.top_k_intent = int(os.getenv('TOP_K_INTENT', 9))
 
     async def search_knowledge_base(self, query_embedding: List[float]) -> List[Dict]:
         """Search knowledge base using vector similarity"""

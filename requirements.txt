@@ -16,8 +16,8 @@ asyncpg==0.29.0
 
 # ML and LLM
 torch>=2.1.0
-transformers==4.36.0
-sentence-transformers==2.2.2
+transformers>=4.51.0
+sentence-transformers>=2.7.0
 bitsandbytes==0.41.3
 accelerate==0.25.0
 
@@ -27,8 +27,8 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 aiohttp==3.9.1
 
-# Reranking
-sentence-transformers==2.2.2
+# Reranking and embeddings
+sentence-transformers>=2.7.0
 
 # Utilities
 python-dotenv==1.0.0

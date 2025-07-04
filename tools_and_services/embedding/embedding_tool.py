@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from typing import List, Union
+from typing import List
 import os
 from dotenv import load_dotenv
 from loguru import logger
@@ -11,7 +11,7 @@ load_dotenv()
 
 class EmbeddingTool:
     def __init__(self):
-        self.model_name = os.getenv('EMBEDDING_MODEL', 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
+        self.model_name = os.getenv('EMBEDDING_MODEL', 'Qwen/Qwen3-Embedding-0.6B')
         self.model = None
         self.cache_dir = os.path.join(os.path.dirname(__file__), 'cache')
     
@@ -20,13 +20,12 @@ class EmbeddingTool:
         if self.model is None:
             try:
                 logger.info(f"Loading embedding model: {self.model_name}")
-
                 # Create cache directory if it doesn't exist
                 os.makedirs(self.cache_dir, exist_ok=True)
                 
-                # Load model synchronously for startup
+                # Load model with SentenceTransformer
                 self.model = SentenceTransformer(
-                    self.model_name, 
+                    self.model_name,
                     cache_folder=self.cache_dir
                 )
                 logger.info("Embedding model loaded successfully")
@@ -45,13 +44,9 @@ class EmbeddingTool:
             loop = asyncio.get_event_loop()
             embeddings = await loop.run_in_executor(
                 None,
-                lambda: self.model.encode(texts, convert_to_tensor=False)
+                lambda: self.model.encode(texts, normalize_embeddings=True).tolist()
             )
-
-            # Normalize embeddings to unit length
-            embeddings_list = embeddings.tolist()
-            normalized_embeddings = self.vector_norm(embeddings_list)
-            return normalized_embeddings
+            return embeddings
         
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")
@@ -62,27 +57,6 @@ class EmbeddingTool:
         if self.model is None:
             self.load_model()
         return self.model.get_sentence_embedding_dimension()
-
-    def vector_norm(self, embeddings: List[List[float]]) -> List[List[float]]:
-        """Normalize vectors to unit length (L2 normalization)"""
-        try:
-            normalized_embeddings = []
-            for embedding in embeddings:
-                # Convert to numpy array for easier computation
-                vec = np.array(embedding)
-                # Calculate L2 norm
-                norm = np.linalg.norm(vec)
-                # Avoid division by zero
-                if norm > 0:
-                    normalized_vec = vec / norm
-                else:
-                    normalized_vec = vec
-                normalized_embeddings.append(normalized_vec.tolist())
-            return normalized_embeddings
-        
-        except Exception as e:
-            logger.error(f"Failed to normalize vectors: {e}")
-            return embeddings
 
 
 # Test the EmbeddingTool
