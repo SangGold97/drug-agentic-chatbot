@@ -2,7 +2,7 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 from typing import List, Dict, Any, Optional
 import os
 from dotenv import load_dotenv
-import logging
+from loguru import logger
 import asyncio
 
 load_dotenv()
@@ -14,7 +14,6 @@ class MilvusManager:
         self.db_name = os.getenv('MILVUS_DB', 'drug_chatbot')
         self.vector_dim = int(os.getenv('VECTOR_DIMENSION', 1024))
         self.connection_alias = "default"
-        self.logger = logging.getLogger(__name__)
     
     async def connect(self):
         """Establish connection to Milvus"""
@@ -29,9 +28,9 @@ class MilvusManager:
                     port=self.port
                 )
             )
-            self.logger.info("Connected to Milvus database")
+            logger.info("Connected to Milvus database")
         except Exception as e:
-            self.logger.error(f"Failed to connect to Milvus: {e}")
+            logger.error(f"Failed to connect to Milvus: {e}")
             raise
     
     async def create_knowledge_base_collection(self) -> Collection | None:
@@ -44,7 +43,7 @@ class MilvusManager:
             # Check if collection exists
             exists = await loop.run_in_executor(None, utility.has_collection, collection_name)
             if exists:
-                self.logger.info(f"Collection {collection_name} already exists")
+                logger.info(f"Collection {collection_name} already exists")
                 return Collection(collection_name)
             
             fields = [
@@ -66,11 +65,11 @@ class MilvusManager:
             }
             await loop.run_in_executor(None, collection.create_index, "vector", index_params)
             
-            self.logger.info(f"Created collection {collection_name}")
+            logger.info(f"Created collection {collection_name}")
             return collection
         
         except Exception as e:
-            self.logger.error(f"Failed to create knowledge base collection: {e}")
+            logger.error(f"Failed to create knowledge base collection: {e}")
             return None
 
     async def create_intent_queries_collection(self) -> Collection | None:
@@ -82,7 +81,7 @@ class MilvusManager:
             # Check if collection exists
             exists = await loop.run_in_executor(None, utility.has_collection, collection_name)
             if exists:
-                self.logger.info(f"Collection {collection_name} already exists")
+                logger.info(f"Collection {collection_name} already exists")
                 return Collection(collection_name)
             
             fields = [
@@ -105,11 +104,11 @@ class MilvusManager:
             }
             await loop.run_in_executor(None, collection.create_index, "vector", index_params)
             
-            self.logger.info(f"Created collection {collection_name}")
+            logger.info(f"Created collection {collection_name}")
             return collection
         
         except Exception as e:
-            self.logger.error(f"Failed to create intent queries collection: {e}")
+            logger.error(f"Failed to create intent queries collection: {e}")
             return None
     
     async def insert_documents(self, collection_name: str, documents: List[Dict[str, Any]]):
@@ -141,89 +140,84 @@ class MilvusManager:
             await loop.run_in_executor(None, collection.insert, data)
             await loop.run_in_executor(None, collection.flush)
             
-            self.logger.info(f"Inserted {len(documents)} documents into {collection_name}")
+            logger.info(f"Inserted {len(documents)} documents into {collection_name}")
         except Exception as e:
-            self.logger.error(f"Failed to insert documents: {e}")
+            logger.error(f"Failed to insert documents: {e}")
             raise
     
-    async def search_vectors(self, query_vector: List[float], 
+    async def search_vector(self, query_vector: List[float], collection_name: str,
                             top_k: int = 10, metric_type: str = "IP") -> List[Dict]:
         """Search for similar vectors"""
         try:
-            collection = Collection("knowledge_base")
-            
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, collection.load)
-            
+            collection = Collection(collection_name)
             search_params = {"metric_type": metric_type}
-            
-            # Search in thread pool
-            results = await loop.run_in_executor(
-                None,
-                lambda: collection.search(
-                    data=[query_vector],
-                    anns_field="vector",
-                    param=search_params,
-                    limit=top_k,
-                    output_fields=["content", "metadata"]
-                )
-            )
-            
-            # Format results
-            formatted_results = []
-            for hit in results[0]:
-                formatted_results.append({
-                    "content": hit.entity.get("content", ""),
-                    "metadata": hit.entity.get("metadata", {}),
-                    "score": hit.score
-                })
-            
-            return formatted_results
-        except Exception as e:
-            self.logger.error(f"Failed to search vectors: {e}")
-            return []
-    
-    async def search_intent(self, query_vector: List[float], 
-                            top_k: int = 5, metric_type: str = "IP") -> List[Dict]:
-        """Search for intent classification"""
-        try:
-            collection = Collection("intent_queries")
-            
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, collection.load)
-            
-            search_params = {"metric_type": metric_type}
-            
-            # Search in thread pool
-            results = await loop.run_in_executor(
-                None,
-                lambda: collection.search(
-                    data=[query_vector],
-                    anns_field="vector",
-                    param=search_params,
-                    limit=top_k,
-                    output_fields=["intent_label"]
+
+            # Search in knowledge base collection
+            if collection_name == "knowledge_base":            
+                await loop.run_in_executor(None, collection.load)
+                
+                # Search in thread pool
+                results = await loop.run_in_executor(
+                    None,
+                    lambda: collection.search(
+                        data=[query_vector],
+                        anns_field="vector",
+                        param=search_params,
+                        limit=top_k,
+                        output_fields=["content", "metadata"]
+                    )
                 )
-            )
+                
+                # Format results
+                formatted_results = []
+                for hit in results[0]:
+                    formatted_results.append({
+                        "content": hit.entity.get("content", ""),
+                        "metadata": hit.entity.get("metadata", {}),
+                        "score": hit.score
+                    })
+                return formatted_results
             
-            # Format results
-            formatted_results = []
-            for hit in results[0]:
-                formatted_results.append({
-                    "intent_label": hit.entity.get("intent_label", ""),
-                    "score": hit.score
-                })
-            return formatted_results
+            elif collection_name == "intent_queries":
+                await loop.run_in_executor(None, collection.load)
+                
+                # Search in thread pool
+                results = await loop.run_in_executor(
+                    None,
+                    lambda: collection.search(
+                        data=[query_vector],
+                        anns_field="vector",
+                        param=search_params,
+                        limit=top_k,
+                        output_fields=["intent_label"]
+                    )
+                )
+                
+                # Format results
+                formatted_results = []
+                for hit in results[0]:
+                    formatted_results.append({
+                        "intent_label": hit.entity.get("intent_label", ""),
+                        "score": hit.score
+                    })
+                return formatted_results
+            
+            else:
+                logger.warning(f"Unknown collection: {collection_name}")
+                return []
+
         except Exception as e:
-            self.logger.error(f"Failed to search intent: {e}")
+            logger.error(f"Failed to search vectors: {e}")
             return []
+
     
     async def close(self):
         """Close connection to Milvus"""
         try:
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, connections.disconnect, self.connection_alias)
-            self.logger.info("Milvus connection closed")
+            logger.info("Milvus connection closed")
         except Exception as e:
-            self.logger.error(f"Error closing Milvus connection: {e}")
+            logger.error(f"Error closing Milvus connection: {e}")
 

@@ -199,6 +199,15 @@ class RerankTool:
             logger.error(f"Failed to rerank chunks: {e}")
             return chunks
 
+    def health_check(self) -> Dict[str, str]:
+        """Health check for rerank service"""
+        try:
+            if self.model is None:
+                return {"status": "loading", "message": "Model not loaded"}
+            return {"status": "healthy", "message": "Rerank service is ready"}
+        except Exception as e:
+            return {"status": "error", "message": f"Error: {str(e)}"}
+
 
 # Test the RerankTool
 if __name__ == "__main__":
@@ -218,8 +227,7 @@ if __name__ == "__main__":
             {"content": "GLP-1 receptor agonists like liraglutide have shown efficacy in improving glycemic control and promoting weight loss in diabetic patients."},
             {"content": "Regular monitoring of HbA1c levels is essential for assessing long-term diabetes management and treatment effectiveness."},
             {"content": "SGLT2 inhibitors such as empagliflozin provide cardiovascular benefits in addition to glucose-lowering effects for diabetic patients."},
-            {"content": "Aspirin is commonly used for cardiovascular disease prevention but is not a primary diabetes treatment."},
-            {"content": "The liver produces glucose through gluconeogenesis, which can be elevated in diabetic patients."}
+            {"content": "Aspirin is commonly used for cardiovascular disease prevention but is not a primary diabetes treatment."}
         ]
         
         print("Testing Qwen3-Reranker with medical content...")

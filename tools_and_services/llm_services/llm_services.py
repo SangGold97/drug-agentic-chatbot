@@ -2,7 +2,7 @@ try:
     from .prompts import LLMPrompts
 except ImportError:
     from prompts import LLMPrompts
-from transformers import AutoProcessor, AutoModelForImageTextToText, TextStreamer
+from transformers import AutoProcessor, AutoModelForImageTextToText
 import torch
 import json
 import os

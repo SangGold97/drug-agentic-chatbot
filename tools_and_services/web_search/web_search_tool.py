@@ -10,6 +10,14 @@ import asyncio
 import aiohttp
 import re
 from readability import Document
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import random
 
 load_dotenv()
 
@@ -71,6 +79,127 @@ class WebSearchTool:
                 logger.error(f"Fallback text extraction also failed: {fallback_error}")
                 return ""
     
+    async def search_urls(self, query: str, max_retries = 2,
+                          suffix_domain: str = " vinmec nhathuoclongchau pharmacity"
+                          ) -> List[str]:
+        """Search for URLs using DuckDuckGo with Selenium to avoid rate limiting."""
+        try:
+            # Random user agents to avoid detection
+            user_agents = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
+            ]
+            
+            # Configure Chrome options to avoid detection
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+            chrome_options.add_argument(f"--user-agent={random.choice(user_agents)}")
+            chrome_options.add_argument("--disable-web-security")
+            chrome_options.add_argument("--allow-running-insecure-content")
+
+            # Initialize WebDriver
+            driver = webdriver.Chrome(options=chrome_options)
+            
+            # Execute script to hide webdriver property
+            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            
+            urls = []
+            
+            for attempt in range(max_retries):
+                try:
+                    # Random delay before each attempt
+                    if attempt > 0:
+                        delay = random.uniform(0.5, 1)
+                        await asyncio.sleep(delay)
+                    
+                    # Open DuckDuckGo
+                    driver.get("https://duckduckgo.com/")
+                    
+                    # Random short delay to simulate human behavior
+                    await asyncio.sleep(random.uniform(0.1, 0.5))
+
+                    # Wait for page to load and find the search box
+                    wait = WebDriverWait(driver, 5)
+                    search_box = wait.until(EC.presence_of_element_located((By.NAME, "q")))
+                    
+                    # Simulate human typing with random delays
+                    search_text = f"{query}{suffix_domain}"
+                    search_box.clear()
+                    for char in search_text:
+                        search_box.send_keys(char)
+                        if random.random() < 0.1:  # 10% chance of pause
+                            await asyncio.sleep(random.uniform(0.05, 0.1))
+                    
+                    # Random delay before pressing enter
+                    await asyncio.sleep(random.uniform(0.1, 0.5))
+                    search_box.send_keys(Keys.RETURN)
+
+                    # Wait for search results to load
+                    await asyncio.sleep(random.uniform(0.1, 0.5))
+                    
+                    # Try different selectors for search results
+                    result_selectors = [
+                        'a[data-testid="result-title-a"]',
+                        'h2 a',
+                        '.result__a',
+                        'a.result__a',
+                        '[data-testid="result-extras-url-link"]'
+                    ]
+                    
+                    results = []
+                    for selector in result_selectors:
+                        results = driver.find_elements(By.CSS_SELECTOR, selector)
+                        if results:
+                            break
+
+                    # Extract URLs from results
+                    for result in results:
+                        href = result.get_attribute('href')
+                        if href:
+                            urls.append(href)
+                    
+                    # If we found URLs, break out of retry loop
+                    if urls:
+                        break
+                        
+                except Exception as e:
+                    logger.warning(f"Attempt {attempt + 1} failed: {e}")
+                    if attempt < max_retries - 1:
+                        continue
+                    else:
+                        raise e
+
+            # Ensure the driver is closed
+            driver.quit()
+
+            if not urls:
+                return []
+
+            # Filter by allowed domains and get unique URLs
+            filtered_urls = []
+            seen_urls = set()
+
+            for url in urls:
+                if url and url not in seen_urls and self._is_allowed_domain(url):
+                    filtered_urls.append(url)
+                    seen_urls.add(url)
+                    if len(filtered_urls) >= self.max_results:
+                        break
+            
+            logger.info(f"Found {len(filtered_urls)} relevant URLs for query: {query}")
+            return filtered_urls
+
+        except Exception as e:
+            logger.error(f"An error occurred during web search with Selenium: {e}")
+            return []
+
     async def _fetch_url_content(self, session: aiohttp.ClientSession, url: str) -> Dict:
         """Fetch content from URL asynchronously """
         try:
@@ -89,51 +218,6 @@ class WebSearchTool:
         except Exception as e:
             logger.error(f"Failed to fetch {url}: {e}")
             return {'url': url, 'content': '', 'success': False}
-    
-    async def search_urls(self, query: str, 
-                          suffix_domain: str = " vinmec nhathuoclongchau pharmacity"
-                          ) -> List[str]:
-        """Search for URLs using DuckDuckGo"""
-        try:
-            # Add delay to avoid rate limiting
-            await asyncio.sleep(1)
-
-            # Run DuckDuckGo search in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            def _search():
-                with DDGS(timeout=5) as ddgs:
-                    return list(ddgs.text(
-                        query + suffix_domain,
-                        max_results=5,
-                        region='wt-wt',
-                        safesearch='moderate'
-                    ))
-            
-            results = await loop.run_in_executor(None, _search)
-            if not results:
-                logger.warning(f"No results found for query: {query}")
-                return []
-            
-            logger.info(f"Found {len(results)} URLs for query: {query}")
-            
-            # Filter by allowed domains and get unique URLs
-            filtered_urls = []
-            seen_urls = set()
-            
-            for result in results:
-                url = result.get('href', '')
-                if url and url not in seen_urls and self._is_allowed_domain(url):
-                    filtered_urls.append(url)
-                    seen_urls.add(url)
-                    if len(filtered_urls) >= self.max_results:
-                        break
-            
-            logger.info(f"Found {len(filtered_urls)} relevant URLs for query: {query}")
-            return filtered_urls
-        
-        except Exception as e:
-            logger.error(f"Web search failed: {e}")
-            return []
     
     async def fetch_web_content(self, urls: List[str]) -> List[Dict]:
         """Fetch content from multiple URLs asynchronously"""
@@ -201,6 +285,13 @@ class WebSearchTool:
 
         return {query: [] for query in structured_queries}
 
+    def health_check(self) -> Dict[str, str]:
+        """Health check for web search service"""
+        try:
+            return {"status": "healthy", "message": "Web search service is ready"}
+        except Exception as e:
+            return {"status": "error", "message": f"Error: {str(e)}"}
+
 
 # Test the WebSearchTool
 if __name__ == "__main__":
@@ -214,9 +305,9 @@ if __name__ == "__main__":
         logger.info("Testing search_and_fetch function...")
         
         test_queries = [
-            "chỉ định và tác dụng phụ của paracetamol, bệnh đau đầu",
-            # "tác dụng của paracetamol trong giảm đau?",
-            # "có những loại thuốc giảm đau phổ biến nào?"
+            # "chỉ định và tác dụng phụ của meloxicam",
+            # "tác dụng của paracetamol trong giảm đau",
+            "cách điều trị viêm gan B",
         ]
         
         logger.info(f"Searching and fetching content for {len(test_queries)} queries:")
@@ -232,7 +323,7 @@ if __name__ == "__main__":
         # Print detailed results
         total_contents = 0
         for query, contents in results.items():
-            logger.info(f"\nQuery: '{query}'")
+            logger.info(f"Query: '{query}'")
             logger.info(f"Found {len(contents)} relevant web pages:")
             
             for i, content in enumerate(contents, 1):
@@ -245,11 +336,10 @@ if __name__ == "__main__":
                 total_contents += 1
         
         total_time = asyncio.get_event_loop().time() - start_time
-        logger.info(f"\nTest Summary:")
+        logger.info(f"Test Summary:")
         logger.info(f"- Total queries: {len(test_queries)}")
         logger.info(f"- Total web pages fetched: {total_contents}")
         logger.info(f"- Total execution time: {total_time:.2f}s")
-        logger.info(f"- Average time per query: {total_time/len(test_queries):.2f}s")
 
     # Run the test
     asyncio.run(test_web_search_tool())

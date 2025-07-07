@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from typing import List
+from typing import List, Dict, Dict
 import os
 from dotenv import load_dotenv
 from loguru import logger
@@ -57,6 +57,15 @@ class EmbeddingTool:
         if self.model is None:
             self.load_model()
         return self.model.get_sentence_embedding_dimension()
+
+    def health_check(self) -> Dict[str, str]:
+        """Health check for embedding service"""
+        try:
+            if self.model is None:
+                return {"status": "loading", "message": "Model not loaded"}
+            return {"status": "healthy", "message": "Embedding service is ready"}
+        except Exception as e:
+            return {"status": "error", "message": f"Error: {str(e)}"}
 
 
 # Test the EmbeddingTool

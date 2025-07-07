@@ -6,4 +6,11 @@ tools_and_services/embedding/cache
 
 database/volumes
 
-database/__pycache__
+*/__pycache__
+
+*/*/__pycache__
+
+*/*/*/__pycache__
+
+*/*/*/*/__pycache__
+
