@@ -21,8 +21,8 @@ def simple_test(service_name='answer', prompt_args=None):
     # Default test data
     if prompt_args is None:
         test_data = {
-            'answer': ("Thuốc paracetamol có tác dụng gì?", "Paracetamol là thuốc giảm đau, hạ sốt, có thể giảm đau đầu.", [{}]),
-            'general': ("Xin chào, tôi bị đau đầu thì có nên tiếp tục làm việc không hay nghỉ ngơi?",),
+            'answer': ("Thuốc chống viêm và giảm đau dịch sang tiếng Anh là gì?", "", [{}]),
+            'general': ("Thuốc chống viêm và giảm đau dịch sang tiếng Anh là gì?",),
             'structured_query_generator': ("Tôi muốn tìm thuốc điều trị cảm cúm, dùng paracetamol có được không?",),
             'reflection': ("Câu hỏi: Codein có tác dụng gì? Liều dùng như nào", "Codein là thuốc giảm đau. Codein có thể gây nghiện."),
         }
@@ -79,15 +79,15 @@ def simple_test(service_name='answer', prompt_args=None):
 
 if __name__ == "__main__":
     # Test với service 'general'
-    # print("="*80)
-    # print("TESTING NORMAL RESPONSE")
-    # print("="*80)
-    # simple_test('general')
-
-    print("\n" + "="*80)
-    print("TESTING ANSWER SERVICE")
     print("="*80)
-    simple_test('answer')
+    print("TESTING NORMAL RESPONSE")
+    print("="*80)
+    simple_test('general')
+
+    # print("\n" + "="*80)
+    # print("TESTING ANSWER SERVICE")
+    # print("="*80)
+    # simple_test('answer')
 
     # print("\n" + "="*80)
     # print("TESTING STRUCTURED QUERY GENERATOR SERVICE")

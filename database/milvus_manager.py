@@ -115,23 +115,20 @@ class MilvusManager:
         """Insert documents into collection"""
         try:
             # Prepare data for insertion
-            data = []
             if collection_name == "knowledge_base":
                 collection = await self.create_knowledge_base_collection()
-                for doc in documents:
-                    data.append([
-                        doc.get('content', ''),
-                        doc.get('metadata', {}),
-                        doc.get('vector', [])
-                    ])
+                data = [
+                    [doc.get('content', '') for doc in documents],      # content field
+                    [doc.get('metadata', {}) for doc in documents],     # metadata field  
+                    [doc.get('vector', []) for doc in documents]        # vector field
+                ]
             elif collection_name == "intent_queries":
                 collection = await self.create_intent_queries_collection()
-                for doc in documents:
-                    data.append([
-                        doc.get('query', ''),
-                        doc.get('intent_label', ''),
-                        doc.get('vector', [])
-                    ])
+                data = [
+                    [doc.get('query', '') for doc in documents],        # query field
+                    [doc.get('intent_label', '') for doc in documents], # intent_label field
+                    [doc.get('vector', []) for doc in documents]        # vector field
+                ]
             else:
                 raise ValueError(f"Unknown collection: {collection_name}")
             
@@ -173,8 +170,8 @@ class MilvusManager:
                 formatted_results = []
                 for hit in results[0]:
                     formatted_results.append({
-                        "content": hit.entity.get("content", ""),
-                        "metadata": hit.entity.get("metadata", {}),
+                        "content": hit.entity.get("content"),
+                        "metadata": hit.entity.get("metadata"),
                         "score": hit.score
                     })
                 return formatted_results
@@ -198,7 +195,7 @@ class MilvusManager:
                 formatted_results = []
                 for hit in results[0]:
                     formatted_results.append({
-                        "intent_label": hit.entity.get("intent_label", ""),
+                        "intent_label": hit.entity.get("intent_label"),
                         "score": hit.score
                     })
                 return formatted_results
@@ -211,7 +208,47 @@ class MilvusManager:
             logger.error(f"Failed to search vectors: {e}")
             return []
 
-    
+    def get_collection_stats(self) -> Dict[str, int]:
+        """Get statistics for all collections"""
+        try:
+            # List all collections
+            collection_names = utility.list_collections()
+            stats = {}
+            
+            for collection_name in collection_names:
+                try:
+                    collection = Collection(collection_name)
+                    # Load collection to get accurate count
+                    collection.load()
+                    # Get number of entities (documents)
+                    stats[collection_name] = collection.num_entities
+                except Exception as e:
+                    logger.warning(f"Failed to get stats for collection {collection_name}: {e}")
+                    stats[collection_name] = 0
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get collection stats: {e}")
+            return {}
+
+    def delete_collection(self, collection_name: str) -> Dict[str, str]:
+        """Delete a collection if it exists"""
+        try:
+            # Check if collection exists
+            if utility.has_collection(collection_name):
+                # Drop the collection
+                utility.drop_collection(collection_name)
+                logger.info(f"Successfully deleted collection: {collection_name}")
+                return {"status": "success", "message": f"Collection '{collection_name}' deleted successfully"}
+            else:
+                logger.warning(f"Collection '{collection_name}' does not exist")
+                return {"status": "success", "message": f"Collection '{collection_name}' does not exist"}
+
+        except Exception as e:
+            logger.error(f"Failed to delete collection {collection_name}: {e}")
+            return {"status": "error", "message": f"Failed to delete collection: {str(e)}"}
+
     async def close(self):
         """Close connection to Milvus"""
         try:

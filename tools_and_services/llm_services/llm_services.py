@@ -6,6 +6,7 @@ from transformers import AutoProcessor, AutoModelForImageTextToText
 import torch
 import json
 import os
+import asyncio
 from typing import Dict, Generator
 from loguru import logger
 from dotenv import load_dotenv
@@ -70,7 +71,7 @@ class LLMService:
         else:
             raise ValueError(f"Unknown service: {self.service_name}")
     
-    def generate_response(self, *args) -> str:
+    async def generate_response(self, *args) -> str:
         """Generate response using MedGemma model"""
         try:
             prompt = self._get_prompt(*args)
@@ -91,15 +92,20 @@ class LLMService:
             
             input_len = inputs["input_ids"].shape[-1]
             
-            with torch.inference_mode():
-                generation = self.model.generate(
-                    **inputs, 
-                    max_new_tokens=1024,
-                    do_sample=True, 
-                    temperature=0.7, 
-                    top_p=0.9
-                )
-                generation = generation[0][input_len:]
+            # Run model generation in thread pool to avoid blocking
+            def _generate():
+                with torch.inference_mode():
+                    generation = self.model.generate(
+                        **inputs, 
+                        max_new_tokens=1024,
+                        do_sample=True, 
+                        temperature=0.7, 
+                        top_p=0.9
+                    )
+                    return generation[0][input_len:]
+            
+            loop = asyncio.get_event_loop()
+            generation = await loop.run_in_executor(None, _generate)
             
             generated_text = self.processor.decode(generation, skip_special_tokens=True)
             

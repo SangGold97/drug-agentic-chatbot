@@ -18,10 +18,10 @@ class RerankTool:
         self.max_length = 1024
         
         # Task instruction for drug/disease/gene reranking
-        self.task_instruction = "Given a medical query about drugs, diseases, or genes, determine if the document is relevant to answer the query."
-        
+        self.task_instruction = "Cho một truy vấn (Query) y tế với nội dung về thuốc, bệnh, gen. Hãy xác định xem tài liệu (Document) có liên quan để trả lời truy vấn hay không."
+
         # Prefix and suffix for Qwen3-Reranker format
-        self.prefix = "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
+        self.prefix = "<|im_start|>system\nHãy đánh giá xem tài liệu (Document) có đáp ứng yêu cầu dựa trên truy vấn (Query) và hướng dẫn (Instruction) được cung cấp hay không. Lưu ý rằng câu trả lời chỉ có thể là \"yes\" hoặc \"no\".<|im_end|>\n<|im_start|>user\n"
         self.suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
     
     def load_model(self):
@@ -109,9 +109,15 @@ class RerankTool:
             batch_scores = torch.stack([false_vector, true_vector], dim=1)
             batch_scores = torch.nn.functional.log_softmax(batch_scores, dim=1)
             scores = batch_scores[:, 1].exp().tolist()
+
+            # Clean up GPU memory
+            del batch_scores, true_vector, false_vector
+            torch.cuda.empty_cache()
+
             return scores
         
         scores = await loop.run_in_executor(None, _inference)
+        del inputs  # Clear inputs to free memory
         return scores
 
     def elbow_pruning(self, chunks: List[Dict]) -> List[Dict]:

@@ -1,5 +1,5 @@
 import asyncio
-import aiohttp
+import httpx
 from typing import List, Dict, Optional, Tuple
 from loguru import logger
 
@@ -19,14 +19,14 @@ class Retriever:
         url = f"{self.base_url}/web_search/search_and_fetch"
         payload = {"structured_queries": [structured_query]}
         
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result.get("results", {})
-                else:
-                    logger.error(f"Web search failed with status {response.status}")
-                    return {}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(url, json=payload)
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("results", {})
+            else:
+                logger.error(f"Web search failed with status {response.status_code}")
+                return {}
     
     async def _call_vector_search(self, structured_query: str) -> List[Dict]:
         """Call vector search pipeline: embedding -> vector_db -> rerank"""
@@ -34,15 +34,15 @@ class Retriever:
         embedding_url = f"{self.base_url}/embedding/generate_embedding"
         embedding_payload = {"texts": [structured_query]}
         
-        async with aiohttp.ClientSession() as session:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             # Generate embedding
-            async with session.post(embedding_url, json=embedding_payload) as response:
-                if response.status != 200:
-                    logger.error(f"Embedding generation failed with status {response.status}")
-                    return []
-                
-                embedding_result = await response.json()
-                query_embedding = embedding_result["embeddings"][0]
+            response = await client.post(embedding_url, json=embedding_payload)
+            if response.status_code != 200:
+                logger.error(f"Embedding generation failed with status {response.status_code}")
+                return []
+            
+            embedding_result = response.json()
+            query_embedding = embedding_result["embeddings"][0]
             
             # Step 2: Vector search
             vector_search_url = f"{self.base_url}/vector_db/search"
@@ -51,13 +51,13 @@ class Retriever:
                 "collection_name": "knowledge_base"
             }
             
-            async with session.post(vector_search_url, json=vector_payload) as response:
-                if response.status != 200:
-                    logger.error(f"Vector search failed with status {response.status}")
-                    return []
-                
-                vector_result = await response.json()
-                chunks = vector_result.get("results", [])
+            response = await client.post(vector_search_url, json=vector_payload)
+            if response.status_code != 200:
+                logger.error(f"Vector search failed with status {response.status_code}")
+                return []
+            
+            vector_result = response.json()
+            chunks = vector_result.get("results", [])
             
             # Step 3: Rerank results
             if not chunks:
@@ -69,15 +69,16 @@ class Retriever:
                 "chunks": chunks
             }
             
-            async with session.post(rerank_url, json=rerank_payload) as response:
-                if response.status != 200:
-                    logger.error(f"Reranking failed with status {response.status}")
-                    return chunks  # Return original chunks if reranking fails
-                
-                rerank_result = await response.json()
-                return rerank_result.get("reranked_chunks", [])
+            response = await client.post(rerank_url, json=rerank_payload)
+            if response.status_code != 200:
+                logger.error(f"Reranking failed with status {response.status_code}")
+                return chunks  # Return original chunks if reranking fails
+            
+            rerank_result = response.json()
+            return rerank_result.get("reranked_chunks", [])
     
-    async def run(self, structured_query: str, web_search: bool = True, vector_search: bool = True) -> Dict:
+    async def run(self, structured_query: str, 
+                  web_search: bool = True, vector_search: bool = True) -> Dict:
         """
         Run retrieval with specified search methods
         
@@ -125,25 +126,29 @@ async def main():
     retriever = Retriever()
     
     # Test query
-    test_query = "What are the side effects of aspirin?"
-    
+    test_query = "tác dụng của thuốc ibuprofen"
+
     logger.info(f"Testing Retriever with query: '{test_query}'")
     
     # Test 1: Both web search and vector search
     logger.info("Test 1: Both web search and vector search")
     results_both = await retriever.run(test_query, web_search=True, vector_search=True)
     logger.info(f"Results (both): {len(results_both)} result types")
-    
+    logger.info(f"Web search results: {results_both.get('web_search')}")
+    logger.info(f"Vector search results: {results_both.get('vector_search', [])}")
+
     # Test 2: Only web search
     logger.info("Test 2: Only web search")
     results_web = await retriever.run(test_query, web_search=True, vector_search=False)
     logger.info(f"Results (web only): {len(results_web)} result types")
-    
+    logger.info(f"Web search results: {results_web.get('web_search')}")
+
     # Test 3: Only vector search
     logger.info("Test 3: Only vector search")
     results_vector = await retriever.run(test_query, web_search=False, vector_search=True)
     logger.info(f"Results (vector only): {len(results_vector)} result types")
-    
+    logger.info(f"Vector search results: {results_vector.get('vector_search')}")
+
     # Test 4: No search (edge case)
     logger.info("Test 4: No search methods")
     results_none = await retriever.run(test_query, web_search=False, vector_search=False)
