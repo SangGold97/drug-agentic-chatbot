@@ -84,7 +84,7 @@ class ModelLoader:
             start = time()
             query = "Bị đau đầu, tôi có nên tiếp tục làm việc căng thẳng không hay nên nghỉ ngơi?"
             logger.info(f"Testing generation with query: {query}")
-            prompt = llmprompts.general_prompt(query)
+            prompt = llmprompts.general_prompt(query, {})
             messages = [
                 {"role": "system", "content": [
                     {"type": "text", "text": "Bạn là một chuyên gia y tế."}

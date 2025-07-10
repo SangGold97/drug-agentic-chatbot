@@ -2,14 +2,15 @@ try:
     from .prompts import LLMPrompts
 except ImportError:
     from prompts import LLMPrompts
-from transformers import AutoProcessor, AutoModelForImageTextToText
+from transformers import AutoProcessor, AutoModelForImageTextToText, TextIteratorStreamer
 import torch
 import json
 import os
 import asyncio
-from typing import Dict, Generator
+from typing import Dict, Generator, AsyncGenerator
 from loguru import logger
 from dotenv import load_dotenv
+from threading import Thread
 load_dotenv()
 
 class LLMService:
@@ -117,6 +118,66 @@ class LLMService:
         except Exception as e:
             logger.error(f"Failed to generate response for {service_name}: {e}")
             return ""
+
+    async def generate_stream_response(self, service_name: str, *args) -> AsyncGenerator[str, None]:
+        """Generate streaming response using MedGemma model with TextIteratorStreamer"""
+        try:
+            prompt = self._get_prompt(service_name, *args)
+            logger.info(f"Streaming prompt for {service_name}")
+
+            messages = [
+                {"role": "system", "content": [
+                    {"type": "text", "text": self.prompts.system_prompt()}
+                ]},
+                {"role": "user", "content": [
+                    {"type": "text", "text": prompt}
+                ]}
+            ]
+            
+            inputs = self.processor.apply_chat_template(
+                messages, add_generation_prompt=True, tokenize=True,
+                return_dict=True, return_tensors="pt"
+            ).to(self.model.device, dtype=torch.bfloat16)
+            
+            # Create TextIteratorStreamer for streaming output
+            streamer = TextIteratorStreamer(
+                self.processor.tokenizer,
+                skip_prompt=True,
+                skip_special_tokens=True,
+                timeout=None
+            )
+            
+            # Generation parameters with streamer
+            generation_kwargs = {
+                **inputs,
+                "max_new_tokens": 1024,
+                "do_sample": True,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "streamer": streamer
+            }
+            
+            # Run generation in separate thread to avoid blocking
+            def _generate():
+                with torch.inference_mode():
+                    self.model.generate(**generation_kwargs)
+            
+            thread = Thread(target=_generate)
+            thread.start()
+            
+            # Stream tokens as they are generated
+            for new_text in streamer:
+                yield new_text
+                
+            thread.join()
+            
+            # Clean up VRAM
+            del inputs
+            torch.cuda.empty_cache()
+            
+        except Exception as e:
+            logger.error(f"Failed to stream response for {service_name}: {e}")
+            yield ""
     
     def health_check(self) -> Dict[str, str]:
         """Health check for LLM services"""

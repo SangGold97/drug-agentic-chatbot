@@ -6,6 +6,7 @@ Test đơn giản cho LLMService - chỉ test một service cụ thể
 import time
 import os
 import sys
+import asyncio
 from loguru import logger
 
 # Add current directory to path for importing
@@ -22,7 +23,7 @@ def simple_test(service_name='answer', prompt_args=None):
     if prompt_args is None:
         test_data = {
             'answer': ("Thuốc chống viêm và giảm đau dịch sang tiếng Anh là gì?", "", [{}]),
-            'general': ("Thuốc chống viêm và giảm đau dịch sang tiếng Anh là gì?",),
+            'general': ("Thuốc paracetamol có tác dụng gì và cách sử dụng ra sao?", {}),
             'structured_query_generator': ("Tôi muốn tìm thuốc điều trị cảm cúm, dùng paracetamol có được không?",),
             'reflection': ("Câu hỏi: Codein có tác dụng gì? Liều dùng như nào", "Codein là thuốc giảm đau. Codein có thể gây nghiện."),
         }
@@ -31,10 +32,10 @@ def simple_test(service_name='answer', prompt_args=None):
     logger.info(f"Testing {service_name} service...")
     
     try:
-        llm_service = LLMService(service_name)
+        llm_service = LLMService()
 
         # Actual test runs
-        num_runs = 2
+        num_runs = 1
         total_time = 0
         total_tokens = 0
         
@@ -47,14 +48,14 @@ def simple_test(service_name='answer', prompt_args=None):
             
             response_time = end_time - start_time
             # Ước tính tokens (1 token ≈ 4 ký tự tiếng Việt)
-            response_tokens = len(response) // 4
+            # response_tokens = len(response) // 4
             
             total_time += response_time
-            total_tokens += response_tokens
+            # total_tokens += response_tokens
             
             logger.info(f"Response time: {response_time:.2f}s")
-            logger.info(f"Response tokens: {response_tokens}")
-            logger.info(f"Tokens/second: {response_tokens/response_time:.2f}")
+            # logger.info(f"Response tokens: {response_tokens}")
+            # logger.info(f"Tokens/second: {response_tokens/response_time:.2f}")
             logger.info(f"Response preview: {response}...")
             print("-" * 50)
         
@@ -77,12 +78,61 @@ def simple_test(service_name='answer', prompt_args=None):
         logger.error(f"Error during testing: {e}")
         raise
 
+async def simple_test_streaming(service_name='general', prompt_args=None):
+    """Test streaming response functionality"""
+    
+    # Default test data
+    if prompt_args is None:
+        test_data = {
+            'answer': ("Thuốc chống viêm có tác dụng như thế nào?", "", [{}]),
+            'general': ("Thuốc paracetamol có tác dụng gì và cách sử dụng ra sao?", {}),
+            'structured_query_generator': ("Tôi muốn tìm thuốc điều trị đau đầu",),
+        }
+        prompt_args = test_data.get(service_name, test_data['general'])
+    
+    try:
+        print(f"Testing streaming for service: {service_name}")
+        print(f"Prompt args: {prompt_args}")
+        print("-" * 60)
+        
+        # Initialize service
+        service = LLMService()
+        
+        # Test streaming response
+        print("Streaming Response:")
+        print("-" * 30)
+        
+        start_time = time.time()
+        token_count = 0
+        
+        async for chunk in service.generate_stream_response(service_name, *prompt_args):
+            if chunk:
+                print(chunk, end='', flush=True)
+                token_count += len(chunk.split())
+                
+        end_time = time.time()
+        
+        print(f"\n\n{'-' * 30}")
+        print(f"Streaming completed in {end_time - start_time:.3f}s")
+        print(f"Approximate tokens: {token_count}")
+        print("=" * 60)
+        
+    except Exception as e:
+        logger.error(f"Error during streaming test: {e}")
+        raise
+
 if __name__ == "__main__":
     # Test với service 'general'
+    # print("="*80)
+    # print("TESTING NORMAL RESPONSE")
+    # print("="*80)
+    # simple_test('general')
+
+    # Test streaming response
+    print("\n" + "="*80)
+    print("TESTING STREAMING RESPONSE")
     print("="*80)
-    print("TESTING NORMAL RESPONSE")
-    print("="*80)
-    simple_test('general')
+    asyncio.run(simple_test_streaming('general'))
 
     # print("\n" + "="*80)
     # print("TESTING ANSWER SERVICE")

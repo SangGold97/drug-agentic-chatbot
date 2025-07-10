@@ -6,12 +6,9 @@ tools_and_services/embedding/cache
 
 database/volumes
 
-*/__pycache__
-
-*/*/__pycache__
-
-*/*/*/__pycache__
-
-*/*/*/*/__pycache__
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
 
 knowledge_base/reference
