@@ -1,0 +1,201 @@
+query,label
+"Thuốc Paracetamol có tác dụng phụ gì không?",medical
+"Liều dùng Amoxicillin cho trẻ em là bao nhiêu?",medical
+"Tôi có thể uống thuốc giảm đau khi mang thai không?",medical
+"Thuốc Metformin điều trị bệnh gì?",medical
+"Có nên uống thuốc kháng sinh cùng với rượu bia không?",medical
+"Gen CYP2D6 ảnh hưởng như thế nào đến chuyển hóa thuốc?",medical
+"Thuốc Aspirin có chống chỉ định với bệnh nhân nào?",medical
+"Tương tác giữa Warfarin và vitamin K như thế nào?",medical
+"Điều trị cao huyết áp bằng thuốc nào hiệu quả nhất?",medical
+"Thuốc Ibuprofen có thể gây tổn thương dạ dày không?",medical
+"Gen BRCA1 liên quan đến nguy cơ ung thư vú như thế nào?",medical
+"Liều dùng insulin cho bệnh nhân tiểu đường type 1?",medical
+"Thuốc Simvastatin có tác dụng phụ nào đáng lưu ý?",medical
+"Có nên ngừng thuốc kháng đông trước phẫu thuật không?",medical
+"Điều trị trầm cảm bằng thuốc SSRI có hiệu quả không?",medical
+"Thuốc Prednisone có thể sử dụng lâu dài được không?",medical
+"Gen APOE4 ảnh hưởng đến nguy cơ Alzheimer như thế nào?",medical
+"Tương tác giữa thuốc tránh thai và kháng sinh?",medical
+"Thuốc Losartan điều trị tăng huyết áp hiệu quả không?",medical
+"Có nên uống thuốc chống viêm khi bị nhiễm trùng?",medical
+"Gen MTHFR đột biến ảnh hưởng đến chuyển hóa folate?",medical
+"Thuốc Omeprazole có thể gây thiếu vitamin B12 không?",medical
+"Điều trị hen suyễn bằng thuốc xịt có an toàn?",medical
+"Thuốc Digoxin có những tương tác thuốc nào cần chú ý?",medical
+"Gen HLA-B*5701 liên quan đến dị ứng thuốc nào?",medical
+"Có thể dùng thuốc giảm đau cho người bệnh gan không?",medical
+"Thuốc Atorvastatin có ảnh hưởng đến cơ bắp không?",medical
+"Điều trị loãng xương bằng thuốc nào hiệu quả nhất?",medical
+"Tương tác giữa thuốc chống trầm cảm và thuốc ngủ?",medical
+"Gen TPMT ảnh hưởng đến liều dùng thuốc 6-MP?",medical
+"Thuốc Levothyroxine có tương tác với thức ăn không?",medical
+"Có nên uống thuốc hạ cholesterol vào buổi tối?",medical
+"Điều trị động kinh bằng Carbamazepine có an toàn?",medical
+"Thuốc Methotrexate có những chống chỉ định nào?",medical
+"Gen UGT1A1 ảnh hưởng đến chuyển hóa bilirubin?",medical
+"Tương tác giữa thuốc tim mạch và thuốc tiểu đường?",medical
+"Thuốc Allopurinol điều trị bệnh gout hiệu quả không?",medical
+"Có thể dùng thuốc kháng histamine cho trẻ nhỏ?",medical
+"Điều trị cao huyết áp thai kỳ bằng thuốc nào an toàn?",medical
+"Gen DPYD đột biến ảnh hưởng đến thuốc 5-FU?",medical
+"Thuốc Clopidogrel có tác dụng phụ về tiêu hóa không?",medical
+"Có nên ngừng thuốc chống đông khi có chảy máu?",medical
+"Điều trị viêm khớp dạng thấp bằng thuốc DMARDs?",medical
+"Thuốc Furosemide có thể gây mất cân bằng điện giải?",medical
+"Gen SLCO1B1 ảnh hưởng đến chuyển hóa statin?",medical
+"Tương tác giữa thuốc chống nấm và thuốc ức chế miễn dịch?",medical
+"Thuốc Amlodipine có thể gây phù chân không?",medical
+"Điều trị rối loạn lưỡng cực bằng lithium có hiệu quả?",medical
+"Có thể dùng thuốc NSAIDs cho người bệnh thận?",medical
+"Gen CYP2C19 ảnh hưởng đến hiệu quả Clopidogrel?",medical
+"Chào bạn, hôm nay thế nào?",general
+"Thời tiết hôm nay có đẹp không?",general
+"Bạn có thể giới thiệu món ăn ngon ở Hà Nội?",general
+"Làm sao để học tiếng Anh hiệu quả?",general
+"Mùa du lịch nào thích hợp nhất để đi Đà Lạt?",general
+"Cách nấu phở bò truyền thống như thế nào?",general
+"Giá vàng hôm nay tăng hay giảm?",general
+"Phim nào đang hot trên Netflix gần đây?",general
+"Cách chăm sóc cây cảnh trong nhà?",general
+"Xe máy nào tiết kiệm xăng nhất hiện tại?",general
+"Luật giao thông mới có gì thay đổi?",general
+"Cách tiết kiệm tiền hiệu quả cho sinh viên?",general
+"Sách nào hay để đọc trong thời gian rảnh?",general
+"Cách trang trí nhà cửa đẹp với ngân sách thấp?",general
+"Môn thể thao nào tốt cho sức khỏe?",general
+"Ứng dụng nào giúp học ngoại ngữ hiệu quả?",general
+"Cách làm bánh mì sandwich ngon?",general
+"Điện thoại nào có camera tốt trong tầm giá?",general
+"Cách viết CV xin việc ấn tượng?",general
+"Nên đầu tư vào đâu trong thời buổi hiện tại?",general
+"Cách chọn laptop phù hợp cho sinh viên?",general
+"Phương tiện giao thông công cộng ở TP.HCM?",general
+"Cách học lái xe ô tô nhanh và an toàn?",general
+"Nhạc pop Việt nào đang được yêu thích?",general
+"Cách trang điểm tự nhiên cho người mới bắt đầu?",general
+"Quán cà phê nào có view đẹp ở Hà Nội?",general
+"Cách chọn quần áo phù hợp với dáng người?",general
+"Tập gym có cần huấn luyện viên không?",general
+"Cách quản lý thời gian hiệu quả cho học sinh?",general
+"Nên mua nhà hay thuê nhà ở thành phố lớn?",general
+"Cách làm vườn rau sạch trên sân thượng?",general
+"Game mobile nào đang hot nhất hiện tại?",general
+"Cách học piano cơ bản tại nhà?",general
+"Nên đi du lịch nước ngoài hay trong nước?",general
+"Cách chăm sóc da mặt cho nam giới?",general
+"Phương pháp học thuộc lòng hiệu quả?",general
+"Cách tìm việc làm thêm cho sinh viên?",general
+"Món quà nào ý nghĩa cho ngày sinh nhật?",general
+"Cách tiết kiệm điện trong gia đình?",general
+"Nên chọn ngành học nào có triển vọng?",general
+"Cách làm bánh cupcake đơn giản tại nhà?",general
+"Phim Hàn Quốc nào đáng xem gần đây?",general
+"Cách chữa mất ngủ không dùng thuốc?",general
+"Nên mua xe máy hay xe đạp điện?",general
+"Cách học photoshop cơ bản cho người mới?",general
+"Quán ăn vỉa hè nào ngon ở Sài Gòn?",general
+"Cách nuôi dạy con cái trong thời đại số?",general
+"Nên đầu tư học thêm kỹ năng gì?",general
+"Cách làm smoothie bổ dưỡng tại nhà?",general
+"Ứng dụng nào giúp quản lý tài chính cá nhân?",general
+"Cách chọn giày dép phù hợp với công việc?",general
+"Bệnh tiểu đường type 2 có thể được phòng ngừa bằng chế độ ăn uống và tập thể dục không?",medical
+"Triệu chứng ban đầu của bệnh Parkinson thường xuất hiện như thế nào và khi nào nên đi khám?",medical
+"Vaccine phòng ngừa ung thư cổ tử cung HPV có hiệu quả bao lâu và ai nên tiêm?",medical
+"Bệnh nhân cao huyết áp nên theo dõi chỉ số huyết áp như thế nào để kiểm soát tốt nhất?",medical
+"Chế độ ăn Mediterranean có thực sự giúp giảm nguy cơ mắc bệnh tim mạch và đột quỵ không?",medical
+"Triệu chứng trầm cảm ở người cao tuổi có khác biệt gì so với người trẻ tuổi không?",medical
+"Bài tập thể dục nào phù hợp nhất cho bệnh nhân viêm khớp để giảm đau và tăng linh hoạt?",medical
+"Tầm soát ung thư vú bằng mammography nên được thực hiện với tần suất như thế nào?",medical
+"Bệnh hen suyễn ở trẻ em có thể được kiểm soát hoàn toàn bằng thuốc và thay đổi môi trường không?",medical
+"Nguy cơ mắc bệnh tim mạch tăng cao ở những người có tiền sử gia đình bệnh tim như thế nào?",medical
+"Chế độ ăn kiêng Keto có an toàn và hiệu quả cho việc giảm cân lâu dài không?",medical
+"Triệu chứng sớm của bệnh Alzheimer mà người thân nên chú ý để phát hiện kịp thời là gì?",medical
+"Bệnh nhân tiểu đường nên kiểm tra mắt định kỳ bao lâu một lần để phòng ngừa biến chứng?",medical
+"Liệu pháp hormone thay thế ở phụ nữ mãn kinh có những lợi ích và rủi ro nào cần cân nhắc?",medical
+"Bệnh loãng xương có thể được phòng ngừa hiệu quả bằng cách bổ sung canxi và vitamin D không?",medical
+"Stress kéo dài có thể dẫn đến những vấn đề sức khỏe nghiêm trọng nào về lâu dài?",medical
+"Chương trình tập luyện tim mạch nào phù hợp nhất cho người bị bệnh mạch vành?",medical
+"Bệnh nhân bị rối loạn giấc ngủ sleep apnea có thể điều trị bằng những phương pháp nào?",medical
+"Tầm soát ung thư đại trực tràng nên bắt đầu từ tuổi nào và thực hiện như thế nào?",medical
+"Bệnh viêm gan B có thể lây truyền qua những đường nào và cách phòng ngừa hiệu quả ra sao?",medical
+"Chế độ ăn ít muối có thực sự giúp kiểm soát huyết áp cao một cách hiệu quả không?",medical
+"Triệu chứng của bệnh lupus ban đỏ hệ thống thường biểu hiện như thế nào ở giai đoạn đầu?",medical
+"Bệnh nhân bị bệnh thận mạn tính nên điều chỉnh chế độ ăn uống như thế nao để bảo vệ thận?",medical
+"Vaccine cúm hàng năm có cần thiết cho tất cả mọi người hay chỉ nhóm nguy cơ cao?",medical
+"Bệnh viêm khớp dạng thấp có thể được điều trị hiệu quả để ngăn ngừa tổn thương khớp không?",medical
+"Chế độ ăn chay thuần túy có cung cấp đủ dinh dưỡng cần thiết cho sức khỏe lâu dài không?",medical
+"Triệu chứng của bệnh ung thư phổi giai đoạn sớm thường không rõ ràng như thế nào?",medical
+"Bệnh nhân bị migraine có thể phòng ngừa cơn đau bằng những biện pháp tự nhiên nào?",medical
+"Tầm soát ung thư tuyến tiền liệt ở nam giới nên thực hiện từ tuổi nào và bao lâu một lần?",medical
+"Bệnh rối loạn lo âu tổng quát có thể được điều trị hiệu quả bằng liệu pháp tâm lý không?",medical
+"Chế độ sinh hoạt và ăn uống như thế nào giúp tăng cường hệ miễn dịch tự nhiên?",medical
+"Bệnh nhân bị bệnh COPD nên tránh những yếu tố môi trường nào để giảm kịch phát?",medical
+"Triệu chứng của bệnh tuyến giáp cường và suy giáp có điểm gì khác biệt rõ rệt?",medical
+"Chế độ tập luyện sức đề kháng có giúp ngăn ngừa loãng xương ở phụ nữ sau mãn kinh không?",medical
+"Bệnh viêm ruột mạn tính IBD có thể được kiểm soát tốt bằng chế độ ăn và thuốc không?",medical
+"Tầm soát ung thư da melanoma nên được thực hiện như thế nào và ai có nguy cơ cao?",medical
+"Bệnh nhân bị bệnh tim mạch vành nên hạn chế những hoạt động thể chất nào?",medical
+"Chế độ ăn giàu chất xơ có thực sự giúp giảm nguy cơ ung thư đại trực tràng không?",medical
+"Triệu chứng của bệnh viêm khớp cột sống dính khớp thường xuất hiện ở độ tuổi nào?",medical
+"Bệnh nhân bị rối loạn ăn uống có thể phục hồi hoàn toàn bằng điều trị tâm lý và dinh dưỡng không?",medical
+"Chương trình phục hồi chức năng sau đột quỵ nên kéo dài bao lâu để đạt hiệu quả tối ưu?",medical
+"Bệnh viêm da cơ địa atopic có thể được kiểm soát hiệu quả bằng liệu pháp tự nhiên không?",medical
+"Tầm soát sức khỏe định kỳ cho người trưởng thành khỏe mạnh nên bao gồm những xét nghiệm nào?",medical
+"Bệnh nhân bị bệnh Crohn có thể duy trì chất lượng cuộc sống tốt bằng điều trị đúng cách không?",medical
+"Chế độ ăn ít carbohydrate có an toàn cho việc kiểm soát đường huyết ở bệnh nhân tiểu đường không?",medical
+"Triệu chứng của bệnh fibromyalgia thường bị nhầm lẫn với những bệnh lý nào khác?",medical
+"Bệnh nhân cao tuổi nên được tiêm vaccine phòng bệnh nào để bảo vệ sức khỏe tối ưu?",medical
+"Chế độ tập yoga và thiền có giúp giảm stress và cải thiện sức khỏe tâm thần không?",medical
+"Bị trĩ thì nên làm sao để giảm đau và khó chịu?",medical
+"Tôi bị đi ngoài phân lỏng, tôi nên ăn gì để cải thiện tình trạng này?",medical
+"Mùa hè này nên đi du lịch những điểm đến nào ở Việt Nam để tránh nóng và đông đúc?",general
+"Cách trang trí phòng ngủ nhỏ để tạo cảm giác rộng rãi và thoáng mát nhất có thể?",general
+"Kỹ năng lập trình nào đang được các nhà tuyển dụng IT săn đón nhiều nhất hiện tại?",general
+"Phương pháp học từ vựng tiếng Anh hiệu quả nào giúp nhớ lâu và sử dụng thành thạo?",general
+"Cách quản lý và đầu tư tiền lương cho người mới đi làm để tích lũy tài chính hiệu quả?",general
+"Món ăn truyền thống nào của Việt Nam đang được du khách nước ngoài yêu thích nhất?",general
+"Cách chọn và chăm sóc thú cưng phù hợp với điều kiện sống trong căn hộ chung cư?",general
+"Xu hướng thời trang nào đang hot nhất trong mùa thu năm nay cho cả nam và nữ?",general
+"Phương tiện giao thông công cộng nào tiện lợi và tiết kiệm nhất để di chuyển trong thành phố?",general
+"Cách tự học một nhạc cụ tại nhà mà không cần đến lớp học truyền thống?",general
+"Ứng dụng mobile nào hữu ích nhất cho việc quản lý công việc và tăng năng suất làm việc?",general
+"Cách làm vườn ban công nhỏ để trồng rau củ sạch cho gia đình sử dụng hàng ngày?",general
+"Phim tài liệu nào đáng xem nhất để mở rộng kiến thức về khoa học và công nghệ?",general
+"Cách chuẩn bị hồ sơ xin học bổng du học để tăng cơ hội được chấp nhận?",general
+"Món quà handmade nào ý nghĩa và dễ làm nhất để tặng người thân trong dịp đặc biệt?",general
+"Cách tổ chức không gian làm việc tại nhà để tăng hiệu quả và giảm mệt mỏi?",general
+"Game online nào phù hợp để chơi cùng bạn bè trong thời gian rảnh rỗi cuối tuần?",general
+"Phương pháp tiết kiệm điện nước hiệu quả nhất mà các gia đình có thể áp dụng ngay?",general
+"Cách chọn laptop gaming với cấu hình tốt nhưng giá cả hợp lý cho sinh viên?",general
+"Địa điểm chụp ảnh cưới đẹp và lãng mạn nhất ở miền Bắc Việt Nam hiện tại?",general
+"Cách học lái xe máy an toàn và nhanh chóng cho người chưa có kinh nghiệm giao thông?",general
+"Kỹ năng mềm nào quan trọng nhất mà sinh viên nên phát triển trong thời đại 4.0?",general
+"Cách làm bánh sinh nhật đơn giản tại nhà mà không cần dụng cụ chuyên nghiệp?",general
+"Phương pháp học online hiệu quả nhất để nắm bắt kiến thức và duy trì động lực học tập?",general
+"Cách chọn và sử dụng mỹ phẩm phù hợp với từng loại da để đạt hiệu quả tốt nhất?",general
+"Hoạt động ngoại khóa nào bổ ích nhất cho học sinh trung học phát triển kỹ năng sống?",general
+"Cách trang trí nhà cửa theo phong cách tối giản minimalist với ngân sách hạn chế?",general
+"Phương pháp quản lý thời gian hiệu quả nào giúp cân bằng giữa công việc và cuộc sống?",general
+"Cách chọn và nuôi cây cảnh trong nhà để thanh lọc không khí tự nhiên?",general
+"Kỹ thuật chụp ảnh portrait đẹp bằng điện thoại mà người mới bắt đầu có thể áp dụng?",general
+"Cách chuẩn bị cho buổi phỏng vấn xin việc để tạo ấn tượng tốt với nhà tuyển dụng?",general
+"Phương pháp học ngoại ngữ nào giúp phát triển kỹ năng giao tiếp thực tế nhanh nhất?",general
+"Cách tổ chức tiệc sinh nhật tại nhà vui vẻ và ấn tượng với số lượng khách ít?",general
+"Thể loại nhạc nào đang được giới trẻ Việt Nam yêu thích và theo đuổi nhiều nhất?",general
+"Cách chọn và sử dụng nước hoa phù hợp với từng dịp và cá tính riêng?",general
+"Phương pháp đọc sách hiệu quả nào giúp ghi nhớ và áp dụng kiến thức vào thực tế?",general
+"Cách làm smoothie bowl healthy và đẹp mắt cho bữa sáng dinh dưỡng?",general
+"Kỹ năng giao tiếp nào quan trọng nhất trong môi trường làm việc đa văn hóa?",general
+"Cách tự học photoshop từ cơ bản đến nâng cao mà không cần khóa học trả phí?",general
+"Phương pháp tập thể dục tại nhà hiệu quả nhất khi không có thời gian đến gym?",general
+"Cách chọn và bảo quản giày dép để sử dụng lâu dài và luôn như mới?",general
+"Ứng dụng học ngôn ngữ nào miễn phí và hiệu quả nhất cho người mới bắt đầu?",general
+"Cách làm đồ handmade từ vật liệu tái chế để trang trí nhà cửa sáng tạo?",general
+"Phương pháp tiết kiệm chi tiêu hàng tháng nào phù hợp nhất cho dân văn phòng?",general
+"Cách chăm sóc tóc tự nhiên tại nhà để có mái tóc khỏe mạnh và bóng mượt?",general
+"Kỹ thuật nấu ăn cơ bản nào mọi người nên biết để tự chăm sóc bản thân?",general
+"Cách tạo thói quen đọc sách hàng ngày và duy trì lâu dài một cách hiệu quả?",general
+"Phương pháp học lịch sử một cách thú vị và dễ nhớ cho học sinh phổ thông?",general
+"Cách chọn quà tặng ý nghĩa và phù hợp với từng mối quan hệ xã hội khác nhau?",general

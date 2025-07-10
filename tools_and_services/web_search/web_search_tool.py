@@ -126,7 +126,7 @@ class WebSearchTool:
                     await asyncio.sleep(random.uniform(0.1, 0.5))
 
                     # Wait for page to load and find the search box
-                    wait = WebDriverWait(driver, 5)
+                    wait = WebDriverWait(driver, 10)
                     search_box = wait.until(EC.presence_of_element_located((By.NAME, "q")))
                     
                     # Simulate human typing with random delays

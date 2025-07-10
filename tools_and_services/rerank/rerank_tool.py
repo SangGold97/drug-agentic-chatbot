@@ -16,6 +16,7 @@ class RerankTool:
         self.tokenizer = None
         self.cache_dir = os.path.join(os.path.dirname(__file__), 'cache')
         self.max_length = 1024
+        self.batch_size = 2
         
         # Task instruction for drug/disease/gene reranking
         self.task_instruction = "Cho một truy vấn (Query) y tế với nội dung về thuốc, bệnh, gen. Hãy xác định xem tài liệu (Document) có liên quan để trả lời truy vấn hay không."
@@ -172,15 +173,19 @@ class RerankTool:
                 formatted_pair = self.format_instruction(query, content)
                 pairs.append(formatted_pair)
             
-            # Get relevance scores using async pipeline
-            inputs = self.process_inputs(pairs)
-            scores = await self.compute_logits(inputs)
+            # Process pairs in batches
+            all_scores = []
+            for i in range(0, len(pairs), self.batch_size):
+                batch_pairs = pairs[i:i + self.batch_size]
+                inputs = self.process_inputs(batch_pairs)
+                batch_scores = await self.compute_logits(inputs)
+                all_scores.extend(batch_scores)
             
             # Combine chunks with scores and sort
             chunks_with_scores = []
             for i, chunk in enumerate(chunks):
                 chunk_copy = chunk.copy()
-                chunk_copy['rerank_score'] = float(scores[i])
+                chunk_copy['rerank_score'] = float(all_scores[i])
                 chunks_with_scores.append(chunk_copy)
             
             # Sort by rerank score (descending)
@@ -233,11 +238,14 @@ if __name__ == "__main__":
             {"content": "GLP-1 receptor agonists like liraglutide have shown efficacy in improving glycemic control and promoting weight loss in diabetic patients."},
             {"content": "Regular monitoring of HbA1c levels is essential for assessing long-term diabetes management and treatment effectiveness."},
             {"content": "SGLT2 inhibitors such as empagliflozin provide cardiovascular benefits in addition to glucose-lowering effects for diabetic patients."},
-            {"content": "Aspirin is commonly used for cardiovascular disease prevention but is not a primary diabetes treatment."}
+            {"content": "Aspirin is commonly used for cardiovascular disease prevention but is not a primary diabetes treatment."},
+            {"content": "Lifestyle modifications, including diet and exercise, are crucial for managing type 2 diabetes."},
+            {"content": "The liver plays a significant role in glucose metabolism, and its dysfunction can contribute to insulin resistance."},
+            {"content": "Type 2 diabetes is characterized by insulin resistance and impaired insulin secretion, leading to elevated blood glucose levels."}
         ]
-        
+
         print("Testing Qwen3-Reranker with medical content...")
-        reranked_chunks = await rerank_tool.rerank(query, chunks, top_k=8, elbow=True)
+        reranked_chunks = await rerank_tool.rerank(query, chunks, top_k=5, elbow=True)
         
         print(f"\nQuery: {query}")
         print("\nReranked Results:")

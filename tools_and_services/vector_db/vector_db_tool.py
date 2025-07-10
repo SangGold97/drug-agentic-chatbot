@@ -1,7 +1,6 @@
 from database.milvus_manager import MilvusManager
 from typing import List, Dict, Any
 import os
-import asyncio
 from dotenv import load_dotenv
 from loguru import logger
 

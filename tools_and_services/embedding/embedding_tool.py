@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from loguru import logger
 import asyncio
 from time import time
+import torch
+import gc
 
 load_dotenv()
 
@@ -14,6 +16,7 @@ class EmbeddingTool:
         self.model_name = os.getenv('EMBEDDING_MODEL', 'Qwen/Qwen3-Embedding-0.6B')
         self.model = None
         self.cache_dir = os.path.join(os.path.dirname(__file__), 'cache')
+        self.batch_size = 8
     
     def load_model(self):
         """Load embedding model"""
@@ -35,18 +38,28 @@ class EmbeddingTool:
                 raise
     
     async def generate_embedding(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for text(s)"""
-        if self.model is None:
-            self.load_model()
-        
+        """Generate embeddings for text(s) with batching to manage GPU memory"""
         try:
-            # Run embedding generation in thread pool
-            loop = asyncio.get_event_loop()
-            embeddings = await loop.run_in_executor(
-                None,
-                lambda: self.model.encode(texts, normalize_embeddings=True).tolist()
-            )
-            return embeddings
+            all_embeddings = []
+            
+            # Process texts in batches
+            for i in range(0, len(texts), self.batch_size):
+                batch_texts = texts[i:i + self.batch_size]
+                
+                # Run embedding generation in thread pool
+                loop = asyncio.get_event_loop()
+                batch_embeddings = await loop.run_in_executor(
+                    None,
+                    lambda: self.model.encode(batch_texts, normalize_embeddings=True).tolist()
+                )
+                
+                all_embeddings.extend(batch_embeddings)
+                
+                # Clear GPU cache after each batch
+                torch.cuda.empty_cache()
+                gc.collect()
+            
+            return all_embeddings
         
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")
@@ -54,8 +67,6 @@ class EmbeddingTool:
 
     def get_embedding_dimension(self) -> int:
         """Get embedding dimension"""
-        if self.model is None:
-            self.load_model()
         return self.model.get_sentence_embedding_dimension()
 
     def health_check(self) -> Dict[str, str]:

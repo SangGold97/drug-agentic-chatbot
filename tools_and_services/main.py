@@ -9,13 +9,14 @@ import os
 
 # Add parent directory to path to import tools
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools_and_services import EmbeddingTool, RerankTool, VectorDBTool, WebSearchTool
-from tools_and_services.llm_services.llm_services import LLMService
+from tools_and_services import (
+    EmbeddingTool, RerankTool, VectorDBTool, WebSearchTool, MetadataDBTool, LLMService
+)
 
 # Initialize FastAPI app
 app = FastAPI(
     title="Drug Agentic Chatbot Tools API",
-    description="API endpoints for embedding, rerank, vector DB, web search, and LLM tools",
+    description="API endpoints for embedding, rerank, vector DB, metadata DB, web search, LLM tools and services",
     version="1.0.0"
 )
 
@@ -24,7 +25,8 @@ embedding_tool = None
 rerank_tool = None
 vector_db_tool = None
 web_search_tool = None
-llm_services = {}
+metadata_db_tool = None
+llm_services = None
 
 # Request models
 class EmbeddingRequest(BaseModel):
@@ -48,12 +50,17 @@ class VectorDBDeleteRequest(BaseModel):
 class WebSearchRequest(BaseModel):
     structured_queries: List[str]
 
+class MetadataDBRequest(BaseModel):
+    user_id: str
+    conversation_id: str
+    query: Optional[str] = None
+    answer: Optional[str] = None
+
 class LLMRequest(BaseModel):
     service_name: str
     query: Optional[str] = None
     structured_query: Optional[str] = None
     context: Optional[str] = None
-    original_query: Optional[str] = None
     chat_history: Optional[List[Dict]] = None
 
 # Response models
@@ -86,6 +93,13 @@ class VectorDBDeleteResponse(BaseModel):
     status: str
     message: str
 
+class MetadataDBResponse(BaseModel):
+    status: str
+    message: str
+
+class MetadataDBHistoryResponse(BaseModel):
+    history: List[Dict[str, Any]]
+
 class WebSearchResponse(BaseModel):
     results: Dict[str, List[Dict]]
 
@@ -95,7 +109,7 @@ class LLMResponse(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize all tools on startup"""
-    global embedding_tool, rerank_tool, vector_db_tool, web_search_tool, llm_services
+    global embedding_tool, rerank_tool, vector_db_tool, web_search_tool, metadata_db_tool, llm_services
     
     logger.info("Initializing tools...")
     
@@ -104,16 +118,12 @@ async def startup_event():
     rerank_tool = RerankTool()
     vector_db_tool = VectorDBTool()
     web_search_tool = WebSearchTool()
-    
+    metadata_db_tool = MetadataDBTool()
+
     # Initialize LLM services
-    service_names = ['answer']
-    for service_name in service_names:
-        try:
-            llm_services[service_name] = LLMService(service_name)
-            logger.info(f"LLM service '{service_name}' initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize LLM service '{service_name}': {e}")
-    
+    llm_services = LLMService()
+    logger.info("LLM service initialized successfully")
+
     # Load models on GPU
     logger.info("Loading embedding model...")
     embedding_tool.load_model()
@@ -123,7 +133,10 @@ async def startup_event():
 
     logger.info("Connecting to vector database...")
     await vector_db_tool.connect()
-    
+
+    logger.info("Connecting to metadata database...")
+    await metadata_db_tool.connect()
+
     logger.info("All tools initialized successfully!")
 
 # Embedding endpoints
@@ -131,9 +144,6 @@ async def startup_event():
 async def generate_embedding(request: EmbeddingRequest):
     """Generate embeddings for input texts"""
     try:
-        if embedding_tool is None:
-            raise HTTPException(status_code=503, detail="Embedding tool not initialized")
-        
         embeddings = await embedding_tool.generate_embedding(request.texts)
         return EmbeddingResponse(embeddings=embeddings)
     
@@ -145,9 +155,6 @@ async def generate_embedding(request: EmbeddingRequest):
 async def get_embedding_dimension():
     """Get embedding dimension"""
     try:
-        if embedding_tool is None:
-            raise HTTPException(status_code=503, detail="Embedding tool not initialized")
-        
         dimension = embedding_tool.get_embedding_dimension()
         return DimensionResponse(dimension=dimension)
     
@@ -159,9 +166,6 @@ async def get_embedding_dimension():
 async def embedding_health_check():
     """Health check for embedding service"""
     try:
-        if embedding_tool is None:
-            return HealthResponse(status="error", message="Embedding tool not initialized")
-        
         health_status = embedding_tool.health_check()
         return HealthResponse(**health_status)
     
@@ -174,9 +178,6 @@ async def embedding_health_check():
 async def rerank(request: RerankRequest):
     """Rerank chunks based on query relevance"""
     try:
-        if rerank_tool is None:
-            raise HTTPException(status_code=503, detail="Rerank tool not initialized")
-        
         reranked_chunks = await rerank_tool.rerank(
             query=request.query,
             chunks=request.chunks
@@ -191,9 +192,6 @@ async def rerank(request: RerankRequest):
 async def rerank_health_check():
     """Health check for rerank service"""
     try:
-        if rerank_tool is None:
-            return HealthResponse(status="error", message="Rerank tool not initialized")
-        
         health_status = rerank_tool.health_check()
         return HealthResponse(**health_status)
     
@@ -206,9 +204,6 @@ async def rerank_health_check():
 async def search(request: VectorSearchRequest):
     """Search vector database using vector similarity"""
     try:
-        if vector_db_tool is None:
-            raise HTTPException(status_code=503, detail="Vector DB tool not initialized")
-
         results = await vector_db_tool.search(query_embedding=request.query_embedding,
                                                collection_name=request.collection_name)
         return VectorSearchResponse(results=results)
@@ -221,9 +216,6 @@ async def search(request: VectorSearchRequest):
 async def insert(request: VectorInsertRequest):
     """Insert documents into vector database"""
     try:
-        if vector_db_tool is None:
-            raise HTTPException(status_code=503, detail="Vector DB tool not initialized")
-
         result = await vector_db_tool.insert(collection_name=request.collection_name,
                                              documents=request.documents)
         return VectorInsertResponse(**result)
@@ -236,9 +228,6 @@ async def insert(request: VectorInsertRequest):
 async def get_vector_db_stats():
     """Get statistics for all vector database collections"""
     try:
-        if vector_db_tool is None:
-            raise HTTPException(status_code=503, detail="Vector DB tool not initialized")
-
         result = vector_db_tool.get_stats()
         return VectorDBStatsResponse(**result)
 
@@ -250,9 +239,6 @@ async def get_vector_db_stats():
 async def delete_collection(request: VectorDBDeleteRequest):
     """Delete a collection from vector database"""
     try:
-        if vector_db_tool is None:
-            raise HTTPException(status_code=503, detail="Vector DB tool not initialized")
-
         result = vector_db_tool.delete_collection(collection_name=request.collection_name)
         return VectorDBDeleteResponse(**result)
 
@@ -264,14 +250,53 @@ async def delete_collection(request: VectorDBDeleteRequest):
 async def vector_db_health_check():
     """Health check for vector DB service"""
     try:
-        if vector_db_tool is None:
-            return HealthResponse(status="error", message="Vector DB tool not initialized")
-
         health_status = vector_db_tool.health_check()
         return HealthResponse(**health_status)
     
     except Exception as e:
         logger.error(f"Error in vector DB health check: {e}")
+        return HealthResponse(status="error", message=str(e))
+    
+# Metadata DB endpoints
+@app.post("/metadata_db/save_conversation", response_model=MetadataDBResponse)
+async def save_conversation(request: MetadataDBRequest):
+    """Save conversation to metadata database"""
+    try:
+        result = await metadata_db_tool.save_conversation(
+            user_id=request.user_id,
+            conversation_id=request.conversation_id,
+            query=request.query,
+            answer=request.answer
+        )
+        return MetadataDBResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Error in save_conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/metadata_db/get_conversation_history", response_model=MetadataDBHistoryResponse)
+async def get_conversation_history(request: MetadataDBRequest):
+    """Get conversation history for a user"""
+    try:
+        history = await metadata_db_tool.get_conversation_history(
+            user_id=request.user_id,
+            conversation_id=request.conversation_id
+        )
+        return MetadataDBHistoryResponse(history=history)
+
+    except Exception as e:
+        logger.error(f"Error in get conversation history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/metadata_db/health_check", response_model=HealthResponse)
+async def metadata_db_health_check():
+    """Health check for metadata DB service"""
+    try:
+        health_status = metadata_db_tool.health_check()
+        return HealthResponse(**health_status)
+    
+    except Exception as e:
+        logger.error(f"Error in metadata DB health check: {e}")
         return HealthResponse(status="error", message=str(e))
 
 # Web search endpoints
@@ -279,9 +304,6 @@ async def vector_db_health_check():
 async def search_and_fetch(request: WebSearchRequest):
     """Search and fetch content for multiple structured queries"""
     try:
-        if web_search_tool is None:
-            raise HTTPException(status_code=503, detail="Web search tool not initialized")
-        
         results = await web_search_tool.search_and_fetch(request.structured_queries)
         return WebSearchResponse(results=results)
     
@@ -293,9 +315,6 @@ async def search_and_fetch(request: WebSearchRequest):
 async def web_search_health_check():
     """Health check for web search service"""
     try:
-        if web_search_tool is None:
-            return HealthResponse(status="error", message="Web search tool not initialized")
-        
         health_status = web_search_tool.health_check()
         return HealthResponse(**health_status)
     
@@ -308,33 +327,29 @@ async def web_search_health_check():
 async def generate_response(request: LLMRequest):
     """Generate response using LLM service"""
     try:
-        # if request.service_name not in llm_services:
-        #     raise HTTPException(status_code=400, detail=f"Invalid service name: {request.service_name}")
-        
-        service = llm_services['answer']
-        
         # Prepare arguments based on service type
         if request.service_name == 'structured_query_generator':
-            if not request.original_query:
-                raise HTTPException(status_code=400, detail="original_query is required for structured_query_generator")
-            response = await service.generate_response(request.original_query)
-        
+            if not request.query:
+                raise HTTPException(status_code=400, detail="query is required for structured_query_generator")
+            response = await llm_services.generate_response(request.service_name, request.query)
+
         elif request.service_name == 'reflection':
             if not request.structured_query or not request.context:
                 raise HTTPException(status_code=400, detail="structured_query and context are required for reflection")
-            response = await service.generate_response(request.structured_query, request.context)
+            response = await llm_services.generate_response(request.service_name, request.structured_query, request.context)
         
         elif request.service_name == 'general':
             if not request.query:
                 raise HTTPException(status_code=400, detail="query is required for general")
-            response = await service.generate_response(request.query)
-        
-        elif request.service_name == 'answer':
-            if not request.original_query or not request.context:
-                raise HTTPException(status_code=400, detail="original_query and context are required for answer")
             chat_history = request.chat_history or []
-            response = await service.generate_response(request.original_query, request.context, chat_history)
-        
+            response = await llm_services.generate_response(request.service_name, request.query, chat_history)
+
+        elif request.service_name == 'answer':
+            if not request.query or not request.context:
+                raise HTTPException(status_code=400, detail="query and context are required for answer")
+            chat_history = request.chat_history or []
+            response = await llm_services.generate_response(request.service_name, request.query, request.context, chat_history)
+
         else:
             raise HTTPException(status_code=400, detail=f"Unknown service: {request.service_name}")
         
@@ -349,18 +364,12 @@ async def generate_response(request: LLMRequest):
 @app.get("/llm/health_check", response_model=Dict[str, HealthResponse])
 async def llm_health_check():
     """Health check for LLM services"""
-    health_status = {}
-    
-    for service_name, service in llm_services.items():
-        try:
-            if service and service.model and service.processor:
-                health_status[service_name] = HealthResponse(status="healthy", message="Service is running")
-            else:
-                health_status[service_name] = HealthResponse(status="error", message="Service not properly initialized")
-        except Exception as e:
-            health_status[service_name] = HealthResponse(status="error", message=str(e))
-    
-    return health_status
+    try:
+        health_status = llm_services.health_check()
+        return HealthResponse(**health_status)
+    except Exception as e:
+        logger.error(f"Error in LLM health check: {e}")
+        return HealthResponse(status="error", message=str(e))
 
 # Root endpoint
 @app.get("/")
@@ -410,17 +419,17 @@ async def global_health_check():
         else:
             health_status["web_search"] = HealthResponse(status="error", message="Not initialized")
 
+        # Check metadata DB service
+        if metadata_db_tool:
+            health_status["metadata_db"] = HealthResponse(**metadata_db_tool.health_check())
+        else:
+            health_status["metadata_db"] = HealthResponse(status="error", message="Not initialized")
+
         # Check LLM services
-        llm_health = {}
-        for service_name, service in llm_services.items():
-            try:
-                if service and service.model and service.processor:
-                    llm_health[service_name] = HealthResponse(status="healthy", message="Service is running")
-                else:
-                    llm_health[service_name] = HealthResponse(status="error", message="Service not properly initialized")
-            except Exception as e:
-                llm_health[service_name] = HealthResponse(status="error", message=str(e))
-        health_status["llm"] = llm_health
+        if llm_services:
+            health_status["llm"] = HealthResponse(**llm_services.health_check())
+        else:
+            health_status["llm"] = HealthResponse(status="error", message="Not initialized")
             
     except Exception as e:
         logger.error(f"Error in global health check: {e}")

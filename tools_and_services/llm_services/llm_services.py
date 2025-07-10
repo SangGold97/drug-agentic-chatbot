@@ -13,21 +13,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class LLMService:
-    def __init__(self, service_name: str):
-        """Initialize LLMService with specific service name
-        
-        Args:
-            service_name: One of 'structured_query_generator', 'reflection', 'general', 'answer'
-        """
-        if service_name not in ['structured_query_generator', 'reflection', 'general', 'answer']:
-            raise ValueError(f"Invalid service name: {service_name}. Must be one of: structured_query_generator, reflection, general, answer")
+    def __init__(self):
+        """Initialize LLMService"""
 
-        self.service_name = service_name
         self.cache_dir = os.path.join(os.path.dirname(__file__), 'models')
-        self.model_name = os.getenv('STRUCTURED_QUERY_GENERATOR_MODEL') if service_name == 'structured_query_generator' else \
-                          os.getenv('REFLECTION_MODEL') if service_name == 'reflection' else \
-                          os.getenv('GENERAL_MODEL') if service_name == 'general' else \
-                          os.getenv('ANSWER_MODEL', 'google/medgemma-4b-it')
+        self.model_name = os.getenv('ANSWER_MODEL', 'google/medgemma-4b-it')
         self.prompts = LLMPrompts()
         
         # Load model and processor
@@ -51,34 +41,35 @@ class LLMService:
                 device_map="auto",
                 attn_implementation="sdpa"
             )
-            
-            logger.info(f"MedGemma model loaded successfully for service: {self.service_name}")
-            
+
+            logger.info("MedGemma model loaded successfully")
+
         except Exception as e:
-            logger.error(f"Failed to load MedGemma model for {self.service_name}: {e}")
+            logger.error(f"Failed to load MedGemma model: {e}")
             raise
     
-    def _get_prompt(self, *args) -> str:
+    def _get_prompt(self, service_name: str, *args) -> str:
         """Get appropriate prompt based on service name"""
-        if self.service_name == 'structured_query_generator':
+        if service_name == 'structured_query_generator':
             return self.prompts.structured_query_prompt(args[0])
-        elif self.service_name == 'reflection':
+        elif service_name == 'reflection':
             return self.prompts.reflection_prompt(args[0], args[1])
-        elif self.service_name == 'general':
-            return self.prompts.general_prompt(args[0])
-        elif self.service_name == 'answer':
+        elif service_name == 'general':
+            return self.prompts.general_prompt(args[0], args[1])
+        elif service_name == 'answer':
             return self.prompts.answer_prompt(args[0], args[1], args[2])
         else:
-            raise ValueError(f"Unknown service: {self.service_name}")
-    
-    async def generate_response(self, *args) -> str:
+            raise ValueError(f"Unknown service: {service_name}")
+
+    async def generate_response(self, service_name: str, *args) -> str:
         """Generate response using MedGemma model"""
         try:
-            prompt = self._get_prompt(*args)
-            
+            prompt = self._get_prompt(service_name, *args)
+            logger.info(f"Prompt:\n{prompt}")
+
             messages = [
                 {"role": "system", "content": [
-                    {"type": "text", "text": "Bạn là một chuyên gia y tế, dược và di truyền, bạn có khả năng tóm tắt thông tin y học và trả lời câu hỏi theo hướng dẫn."}
+                    {"type": "text", "text": self.prompts.system_prompt()}
                 ]},
                 {"role": "user", "content": [
                     {"type": "text", "text": prompt}
@@ -110,16 +101,26 @@ class LLMService:
             generated_text = self.processor.decode(generation, skip_special_tokens=True)
             
             # Clean up JSON response for structured_query_generator and reflection services
-            if self.service_name in ['structured_query_generator', 'reflection']:
+            if service_name in ['structured_query_generator', 'reflection']:
                 # Remove markdown code blocks if present
                 if '```json' in generated_text:
                     generated_text = generated_text.split('```json')[1].split('```')[0].strip()
                 elif '```' in generated_text:
                     generated_text = generated_text.split('```')[1].strip()
             
+            # Clean up VRAM
+            del inputs, generation
+            torch.cuda.empty_cache()
+            
             return generated_text
             
         except Exception as e:
-            logger.error(f"Failed to generate response for {self.service_name}: {e}")
+            logger.error(f"Failed to generate response for {service_name}: {e}")
             return ""
     
+    def health_check(self) -> Dict[str, str]:
+        """Health check for LLM services"""
+        try:
+            return {"status": "healthy", "message": "LLM services are ready"}
+        except Exception as e:
+            return {"status": "error", "message": f"Error: {str(e)}"}

@@ -5,112 +5,80 @@ import httpx
 import asyncio
 from loguru import logger
 
-class IndexKnowledge:
+class IndexIntent:
     def __init__(self, base_url: str = "http://localhost:8001"):
         """
-        Initialize Retriever with base URL for the tools API
+        Initialize IndexIntent with base URL for the tools API
         
         Args:
             base_url: Base URL for the tools and services API
         """
         self.base_url = base_url
 
-    def _create_chunks_from_csv(self, csv_file_path: str) -> List[Dict[str, Any]]:
-        """Create text chunks from CSV knowledge base"""
+    def _create_chunks_from_csv(self, csv_file_path: str) -> List[Dict[str, str]]:
+        """Create chunks from intent_queries.csv"""
         try:
             df = pd.read_csv(csv_file_path)
+            # logger.info(f"Number of label medical queries: {df[df['label'] == 'medical'].shape[0]}")
+            # logger.info(f"Number of label non-medical queries: {df[df['label'] != 'medical'].shape[0]}")
             chunks = []
             
-            for id, row in df.iterrows():
-                # Create text chunk from relevant columns
-                chunk_parts = []
-                
-                # Drug name
-                if 'name' in row and pd.notna(row['name']):
-                    chunk_parts.append(f"Hoạt chất thuốc {row['name']}")
-                
-                # Group
-                if 'group' in row and pd.notna(row['group']):
-                    chunk_parts.append(f"Thuộc nhóm: {row['group']}")
-
-                # Related diseases
-                if 'related_diseases' in row and pd.notna(row['related_diseases']):
-                    chunk_parts.append(f"Thuốc này chỉ định cho các bệnh: {row['related_diseases']}")
-
-                # Related gene
-                if 'related_gene' in row and row['related_gene'] not in [None, '']:
-                    chunk_parts.append(f"Trong báo cáo PGx của Genestory, liên quan đến gene: {row['related_gene']}")
-                
-                # Product names
-                if 'product_names' in row and pd.notna(row['product_names']):
-                    chunk_parts.append(f"Một số sản phẩm chứa hoạt chất thuốc: {row['product_names']}")
-                
-                if chunk_parts:
-                    content = '\n'.join(chunk_parts)
-                    
-                    # Create metadata
-                    metadata = {
-                        'category': row['category'] if 'category' in row and pd.notna(row['category']) else '',
-                        'recommendation': row['recommendation'] if 'recommendation' in row and pd.notna(row['recommendation']) else '',
-                        'description': row['description'] if 'description' in row and pd.notna(row['description']) else '',
-                    }
-                    
+            for _, row in df.iterrows():
+                if pd.notna(row['query']) and pd.notna(row['label']):
                     chunks.append({
-                        'content': content,
-                        'metadata': metadata
+                        'query': row['query'],
+                        'intent_label': row['label']
                     })
             
             logger.info(f"Created {len(chunks)} chunks from CSV")
-            logger.info(f"Sample content:\n{chunks[0]['content']}")
             return chunks
             
         except Exception as e:
-            logger.error(f"Failed to create chunks from CSV: {e}")
+            logger.error(f"Failed to create chunks from CSV: {str(e)}")
             return []
-    
-    async def _create_embeddings(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+    async def _create_embeddings(self, chunks: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         """Create embeddings for chunks"""
         try:
-            # Extract content for embedding
-            contents = [chunk['content'] for chunk in chunks]
+            # Extract queries for embedding
+            queries = [chunk['query'] for chunk in chunks]
             
-            # Call embedding API with increased timeout
+            # Call embedding API
             async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
                     f"{self.base_url}/embedding/generate_embedding",
-                    json={"texts": contents}
+                    json={"texts": queries}
                 )
                 response.raise_for_status()
                 embeddings = response.json()["embeddings"]
             
-            # Add embeddings to chunks
+            # Create documents with embeddings
             documents = []
             for i, chunk in enumerate(chunks):
                 if i < len(embeddings) and embeddings[i]:
                     document = {
-                        'content': chunk['content'],
-                        'metadata': chunk['metadata'],
+                        'query': chunk['query'],
+                        'intent_label': chunk['intent_label'],
                         'vector': embeddings[i]
                     }
                     documents.append(document)
 
             logger.info(f"Created embeddings for {len(documents)} documents")
-            logger.info(f"Sample content and embedding:\n{documents[0]['content']}\n{documents[0]['vector'][:10]}...")
             return documents
             
         except Exception as e:
             logger.error(f"Failed to create embeddings: {e}")
             return []
-    
+
     async def _insert_chunks(self, documents: List[Dict[str, Any]]) -> bool:
         """Insert documents into Milvus via vector_db API"""
         try:
-            # Call vector_db insert API with increased timeout
+            # Call vector_db insert API
             async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
                     f"{self.base_url}/vector_db/insert",
                     json={
-                        "collection_name": "knowledge_base",
+                        "collection_name": "intent_queries",
                         "documents": documents
                     }
                 )
@@ -127,9 +95,9 @@ class IndexKnowledge:
         except Exception as e:
             logger.error(f"Failed to insert documents: {e}")
             return False
-    
+
     async def run(self, csv_file_path: str) -> Dict[str, Any]:
-        """Main method to index knowledge base"""
+        """Main method to index intent queries"""
         try:
             if not os.path.exists(csv_file_path):
                 raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
@@ -150,7 +118,7 @@ class IndexKnowledge:
             if success:
                 return {
                     'success': True,
-                    'message': f'Successfully indexed {len(documents)} documents',
+                    'message': f'Successfully indexed {len(documents)} intent queries',
                     'document_count': len(documents)
                 }
             else:
@@ -160,8 +128,7 @@ class IndexKnowledge:
             logger.error(f"Indexing failed: {e}")
             return {'success': False, 'message': f'Indexing failed: {str(e)}'}
 
-
-    async def delete_collection(self, collection_name: str = 'knowledge_base') -> Dict[str, Any]:
+    async def delete_collection(self, collection_name: str = 'intent_queries') -> Dict[str, Any]:
         """Delete a collection from Milvus via vector_db API"""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
@@ -179,9 +146,9 @@ class IndexKnowledge:
         except Exception as e:
             logger.error(f"Failed to delete collection {collection_name}: {e}")
             return {'success': False, 'message': f'Failed to delete collection: {str(e)}'}
-        
-    async def get_stats_collection(self):
-        """Get statistics of a collection from Milvus via vector_db API"""
+
+    async def get_stats_collection(self) -> Dict[str, Any]:
+        """Get statistics of collections from Milvus via vector_db API"""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(
@@ -200,9 +167,9 @@ class IndexKnowledge:
 
 
 async def main():
-    """Test function for the IndexKnowledge class"""
+    """Test function for the IndexIntent class"""
     # Initialize indexing worker
-    worker = IndexKnowledge()
+    worker = IndexIntent()
 
     async def get_stats():
         # Get stats of collections
@@ -216,10 +183,10 @@ async def main():
 
     await worker.delete_collection()
 
-    # CSV file path - adjust this to your actual CSV file
-    csv_file_path = "../knowledge_base/knowledge_base.csv"
+    # CSV file path
+    csv_file_path = "../intent_queries/intent_queries.csv"
     
-    logger.info(f"Testing IndexKnowledge with CSV file: {csv_file_path}")
+    logger.info(f"Testing IndexIntent with CSV file: {csv_file_path}")
     
     # Check if CSV file exists
     if not os.path.exists(csv_file_path):
@@ -228,21 +195,22 @@ async def main():
     
     try:
         # Run indexing process
-        logger.info("Starting indexing process...")
+        logger.info("Starting intent indexing process...")
         result = await worker.run(csv_file_path)
         
         # Display results
-        logger.info("Indexing completed!")
+        logger.info("Intent indexing completed!")
         logger.info(f"Success: {result['success']}")
         logger.info(f"Message: {result['message']}")
         
         if 'document_count' in result:
-            logger.info(f"Documents indexed: {result['document_count']}")
+            logger.info(f"Intent queries indexed: {result['document_count']}")
             
     except Exception as e:
         logger.error(f"Error during testing: {e}")
 
     await get_stats()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

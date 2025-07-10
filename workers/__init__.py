@@ -1,17 +1,17 @@
-from .index_knowledge import IndexingWorker
-from .intent_classification_worker import IntentClassificationWorker
-from .query_augmentation_worker import QueryAugmentationWorker
+from .index_knowledge import IndexKnowledge
+from .intent_classification import IntentClassification
+from .structured_query_generator import StructuredQueryGenerator
 from .retriever import Retriever
-from .reflection_worker import ReflectionWorker
-from .q_and_a_worker import QAndAWorker
-from .save_conversation_worker import SaveConversationWorker
+from .reflection import Reflection
+from .answer import Answer
+from .save_conversation import SaveConversation
 
 __all__ = [
-    'IndexingWorker',
-    'IntentClassificationWorker', 
-    'QueryAugmentationWorker',
+    'IndexKnowledge',
+    'IntentClassification',
+    'StructuredQueryGenerator',
     'Retriever',
-    'ReflectionWorker',
-    'QAndAWorker',
-    'SaveConversationWorker'
+    'Reflection',
+    'Answer',
+    'SaveConversation'
 ]
